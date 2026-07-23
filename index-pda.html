@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>Gestão de Atividades — Portal Operacional</title>
+  <style>
+    :root {
+      --vivo: #660099;
+      --vivo-dark: #4A0072;
+      --vivo-light: #8B2FC9;
+      --blue: #0D6EFD;
+      --green: #198754;
+      --orange: #FD7E14;
+      --red: #DC3545;
+      --ink: #1A1A1A;
+      --text: #495057;
+      --muted: #6C757D;
+      --light-muted: #ADB5BD;
+      --border: #E9ECEF;
+      --surface: #F8F9FA;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
+      background: #F8F9FA;
+      color: #1A1A1A;
+      overflow: hidden;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+    svg { display: block; flex-shrink: 0; }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(102, 0, 153, 0.22); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(102, 0, 153, 0.45); }
+
+    #app { width: 100%; height: 100%; }
+    .app-shell { display: flex; height: 100vh; overflow: hidden; background: #F8F9FA; }
+    .main-shell { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .main-content { flex: 1; overflow-y: auto; padding: 24px; background: #F8F9FA; }
+    .content-inner { max-width: 1440px; margin: 0 auto; }
+
+    .sidebar {
+      width: 256px;
+      background: linear-gradient(180deg, #3D005E 0%, #660099 60%, #7B0DB3 100%);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: width 0.25s cubic-bezier(.4,0,.2,1);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 20;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+    }
+    .sidebar.collapsed { width: 68px; }
+    .sidebar-logo {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 72px;
+    }
+    .sidebar.collapsed .sidebar-logo { padding: 20px 16px; }
+    .brand-mark {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.88) 100%);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 16px; font-weight: 900; color: #660099;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18); letter-spacing: -1px;
+    }
+    .brand-copy { overflow: hidden; }
+    .brand-title { color: white; font-weight: 700; font-size: 15px; line-height: 1.25; white-space: nowrap; }
+    .brand-subtitle { color: rgba(255,255,255,0.55); font-size: 11px; margin-top: 1px; }
+    .sidebar.collapsed .brand-copy { display: none; }
+    .sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; overflow-x: hidden; }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+      border-radius: 8px; border: none; cursor: pointer; width: 100%; text-align: left;
+      background: transparent; color: rgba(255,255,255,0.70);
+      font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
+      font-size: 14px; font-weight: 400; transition: all 0.15s ease;
+      margin-bottom: 2px; position: relative;
+    }
+    .sidebar-item:hover { background: rgba(255,255,255,0.10); color: white; }
+    .sidebar-item.active { background: rgba(255,255,255,0.18); color: white; font-weight: 600; }
+    .sidebar-item.active::before {
+      content: ''; position: absolute; left: 0; top: 8px; bottom: 8px;
+      width: 3px; border-radius: 0 3px 3px 0; background: white;
+    }
+    .sidebar.collapsed .sidebar-item { justify-content: center; padding: 10px 12px; }
+    .sidebar-item-label { flex: 1; }
+    .sidebar.collapsed .sidebar-item-label, .sidebar.collapsed .sidebar-badge { display: none; }
+    .sidebar-icon-wrap { display: flex; align-items: center; flex-shrink: 0; position: relative; }
+    .sidebar-badge {
+      background: rgba(220,53,69,0.9); color: white; border-radius: 10px;
+      font-size: 10px; font-weight: 700; min-width: 18px; height: 18px;
+      display: flex; align-items: center; justify-content: center; padding: 0 5px;
+    }
+    .sidebar-mini-badge {
+      position: absolute; top: -5px; right: -5px; background: #DC3545; color: white;
+      border-radius: 10px; font-size: 9px; font-weight: 700; min-width: 14px; height: 14px;
+      display: none; align-items: center; justify-content: center; padding: 0 3px;
+    }
+    .sidebar.collapsed .sidebar-mini-badge { display: flex; }
+    .sidebar-footer { padding: 10px; border-top: 1px solid rgba(255,255,255,0.10); }
+    .collapse-button {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 12px; border-radius: 8px; border: none; cursor: pointer;
+      background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.55);
+      transition: all 0.15s; font-family: 'Segoe UI', sans-serif; font-size: 12px;
+    }
+    .collapse-button:hover { background: rgba(255,255,255,0.14); }
+    .sidebar.collapsed .collapse-button { justify-content: center; }
+    .sidebar.collapsed .collapse-label { display: none; }
+
+    .header {
+      height: 64px; background: white; border-bottom: 1px solid #E9ECEF;
+      display: flex; align-items: center; padding: 0 24px; gap: 16px;
+      flex-shrink: 0; position: sticky; top: 0; z-index: 15;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+    .header-title-wrap { flex: 1; min-width: 0; }
+    .header-breadcrumb { font-size: 11px; color: #ADB5BD; margin-bottom: 1px; }
+    .header-breadcrumb span { color: #495057; }
+    .header-title { font-size: 17px; font-weight: 700; color: #1A1A1A; line-height: 1; }
+    .header-search { position: relative; width: 240px; }
+    .header-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #ADB5BD; display: flex; }
+    .icon-button {
+      background: none; border: none; cursor: pointer; color: #ADB5BD;
+      display: flex; padding: 6px; border-radius: 6px;
+    }
+    .header-dropdown-wrap { position: relative; }
+    .notif-button {
+      background: none; border: none; cursor: pointer; color: #495057;
+      display: flex; padding: 7px; border-radius: 8px; position: relative;
+      transition: all 0.15s;
+    }
+    .notif-button.open { background: #F3E8FF; color: #660099; }
+    .notification-count {
+      position: absolute; top: 3px; right: 3px; background: #DC3545; color: white;
+      border-radius: 10px; font-size: 9px; font-weight: 700; min-width: 15px; height: 15px;
+      display: flex; align-items: center; justify-content: center; padding: 0 3px;
+    }
+    .dropdown-panel {
+      position: absolute; right: 0; top: calc(100% + 8px); background: white;
+      border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      border: 1px solid #E9ECEF; z-index: 100; overflow: hidden;
+    }
+    .notification-panel { width: 360px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.14); }
+    .notification-head { padding: 14px 16px; border-bottom: 1px solid #E9ECEF; display: flex; align-items: center; justify-content: space-between; }
+    .notification-scroll { max-height: 360px; overflow-y: auto; }
+    .notification-item {
+      padding: 12px 16px; border-bottom: 1px solid #F1F3F5;
+      display: flex; gap: 12px; align-items: flex-start; background: transparent;
+      cursor: pointer; transition: background 0.1s;
+    }
+    .notification-item.unread { background: #FAFAFA; }
+    .notification-item:hover { background: #F8F9FA; }
+    .notification-icon {
+      width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .notification-dot { width: 7px; height: 7px; border-radius: 50%; background: #660099; flex-shrink: 0; margin-top: 6px; }
+    .profile-switch-button {
+      background: #F8F9FA; border: 1px solid #E9ECEF; border-radius: 8px;
+      padding: 5px 10px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+      transition: all 0.15s;
+    }
+    .profile-switch-button.open { background: #F3E8FF; }
+    .profile-icon { font-size: 10px; color: #660099; font-weight: 600; white-space: nowrap; }
+    .profile-label { font-size: 12px; color: #495057; font-weight: 500; }
+    .profile-panel { width: 320px; }
+    .profile-panel-title { padding: 8px 12px 6px; font-size: 11px; color: #ADB5BD; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+    .profile-option {
+      display: block; width: 100%; text-align: left; padding: 9px 14px; border: none;
+      cursor: pointer; background: transparent; color: #1A1A1A;
+      font-family: 'Segoe UI', sans-serif; font-size: 13px; font-weight: 400;
+      transition: background 0.1s;
+    }
+    .profile-option:hover { background: #F8F9FA; }
+    .profile-option.active { background: #F3E8FF; color: #660099; font-weight: 600; }
+    .user-button {
+      background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 10px;
+      padding: 4px 8px; border-radius: 8px; transition: background 0.15s;
+    }
+    .user-button:hover { background: #F8F9FA; }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: linear-gradient(135deg, #660099, #8B2FC9);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 700; font-size: 12px; flex-shrink: 0;
+    }
+    .user-copy { text-align: left; }
+    .user-name { font-size: 13px; font-weight: 600; color: #1A1A1A; line-height: 1.25; }
+    .user-role-short { font-size: 11px; color: #6C757D; line-height: 1; }
+    .user-panel { width: 220px; }
+    .user-panel-head { padding: 14px 14px 10px; border-bottom: 1px solid #F1F3F5; }
+    .user-menu-item {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px;
+      border: none; cursor: pointer; background: transparent; color: #495057;
+      font-family: 'Segoe UI', sans-serif; font-size: 13px; transition: background 0.1s;
+    }
+    .user-menu-item:hover { background: #F8F9FA; }
+    .user-menu-item.danger { color: #DC3545; border-top: 1px solid #F1F3F5; }
+    .user-menu-item.danger:hover { background: #FFF5F5; }
+
+    .profile-strip {
+      position: fixed; bottom: 0; left: 256px; right: 0; height: 3px;
+      background: #660099; transition: left 0.25s cubic-bezier(.4,0,.2,1), background 0.3s; z-index: 50;
+    }
+    .profile-strip.collapsed { left: 68px; }
+
+    .view-stack { display: flex; flex-direction: column; gap: 20px; }
+    .card { background: #fff; border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.10); }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .kpi-card { padding: 18px 20px; display: flex; gap: 14px; align-items: center; }
+    .kpi-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .kpi-value { font-size: 22px; font-weight: 800; color: #1A1A1A; line-height: 1; }
+    .kpi-label { font-size: 12px; color: #6C757D; margin-top: 3px; }
+
+    .btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-outline {
+      border-radius: 8px; font-weight: 600; font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
+      cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-primary { background: linear-gradient(135deg, #660099, #4A0072); border: none; color: #fff; }
+    .btn-secondary { background: #0D6EFD; border: none; color: #fff; }
+    .btn-success { background: #198754; border: none; color: #fff; }
+    .btn-danger { background: #DC3545; border: none; color: #fff; }
+    .btn-outline { background: transparent; border: 2px solid #660099; color: #660099; }
+    .btn-primary:hover, .btn-secondary:hover, .btn-success:hover, .btn-danger:hover { opacity: 0.89; transform: translateY(-1px); }
+    .btn-primary:active, .btn-secondary:active, .btn-success:active, .btn-danger:active { transform: translateY(0); }
+    .btn-outline:hover { background: #f3e8ff; }
+
+    .form-input {
+      border: 1.5px solid #CED4DA; border-radius: 8px; padding: 9px 12px;
+      font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; font-size: 14px;
+      color: #1A1A1A; background: #fff; outline: none; transition: border-color 0.15s, box-shadow 0.15s; width: 100%;
+    }
+    .form-input:focus { border-color: #660099; box-shadow: 0 0 0 3px rgba(102, 0, 153, 0.12); }
+    .form-input::placeholder { color: #ADB5BD; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+      border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap;
+    }
+    .badge-success { background: #d1fae5; color: #198754; }
+    .badge-danger { background: #fee2e2; color: #DC3545; }
+    .badge-warning { background: #fff3cd; color: #c97500; }
+    .badge-info { background: #dbeafe; color: #0D6EFD; }
+    .badge-vivo { background: #f3e8ff; color: #660099; }
+    .badge-gray { background: #f1f3f5; color: #495057; }
+    .badge-orange { background: #fff7ed; color: #C05621; }
+
+    .progress-bar { height: 6px; border-radius: 3px; background: #E9ECEF; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+    .switch-track { width: 44px; height: 24px; border-radius: 12px; background: #CED4DA; position: relative; cursor: pointer; transition: background 0.2s; border: none; padding: 0; display: inline-block; }
+    .switch-track.on { background: #660099; }
+    .switch-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: white; transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+    .switch-track.on .switch-thumb { transform: translateX(20px); }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(2px); }
+    .modal-box { background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-width: 520px; width: 90%; animation: modalIn 0.2s ease; }
+    .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 1000; backdrop-filter: blur(1px); }
+    .drawer-panel { position: fixed; right: 0; top: 0; bottom: 0; width: 420px; background: white; box-shadow: -8px 0 30px rgba(0,0,0,0.12); z-index: 1001; overflow-y: auto; animation: drawerIn 0.25s ease; }
+    .tooltip-box { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #1A1A1A; color: white; padding: 7px 12px; border-radius: 7px; font-size: 12px; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100; animation: fadeIn 0.1s ease; }
+    .tooltip-box::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%) rotate(45deg); width: 8px; height: 8px; background: #1A1A1A; }
+
+    .section-card { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .section-title { font-weight: 700; font-size: 15px; color: #1A1A1A; padding-bottom: 12px; border-bottom: 1px solid #F1F3F5; }
+    .row-label { font-size: 11px; font-weight: 600; color: #ADB5BD; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+    .row-flex { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .icon-only-button { width: 36px; height: 36px; border-radius: 8px; border: 1.5px solid #CED4DA; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #495057; transition: all 0.15s; }
+    .icon-only-button:hover { border-color: #660099; color: #660099; }
+
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(-16px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes drawerIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(4px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+    @media (max-width: 1100px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      .two-column, .regional-layout, .dashboard-chart-layout, .dashboard-bottom-layout { grid-template-columns: 1fr !important; }
+      .division-approvals-grid { grid-template-columns: 1fr !important; }
+      .division-approval-card { border-right: none !important; border-bottom: 1px solid #F1F3F5; }
+    }
+    @media (max-width: 768px) {
+      .responsive-hide { display: none !important; }
+      .main-content { padding: 14px; }
+      .sidebar { width: 68px; }
+      .sidebar .brand-copy, .sidebar .sidebar-item-label, .sidebar .sidebar-badge, .sidebar .collapse-label { display: none; }
+      .sidebar .sidebar-item, .sidebar .collapse-button { justify-content: center; padding: 10px 12px; }
+      .sidebar .sidebar-logo { padding: 20px 16px; }
+      .sidebar .sidebar-mini-badge { display: flex; }
+      .profile-strip { left: 68px !important; }
+      .header { padding: 0 14px; gap: 8px; }
+      .kpi-grid { grid-template-columns: 1fr !important; }
+      .form-grid { grid-template-columns: 1fr !important; }
+      .welcome-bar { align-items: flex-start !important; }
+      .notification-panel { width: min(360px, calc(100vw - 90px)); }
+      .drawer-panel { width: min(420px, 100vw); }
+    }
+    /* Refatoração do fluxo operacional */
+    :focus-visible { outline: 3px solid rgba(13,110,253,.35); outline-offset: 2px; }
+    .btn-warning { background: #FD7E14; border: none; color: #fff; }
+    .btn-warning:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-sm { padding: 7px 10px; font-size: 12px; }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+    .no-border { border: 0 !important; padding: 0 !important; }
+    .tiny-note { font-size: 10px; color: #ADB5BD; margin-top: 4px; }
+    .page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+    .page-header h1 { margin:0; font-size:26px; line-height:1.2; color:#1A1A1A; }
+    .page-header p { margin:5px 0 0; color:#6C757D; font-size:14px; }
+    .page-actions,.form-actions,.modal-actions,.table-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .section-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .kpi-grid-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .form-card { padding:24px; display:flex; flex-direction:column; gap:20px; }
+    .form-section-title { font-size:15px; font-weight:700; color:#4A0072; padding-bottom:10px; border-bottom:1px solid #E9ECEF; }
+    .form-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+    .form-grid-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .form-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+    .form-field > span,.compact-filter > span { font-size:12px; font-weight:650; color:#495057; }
+    .form-field b { color:#DC3545; }
+    .field-help { color:#6C757D; font-size:11px; line-height:1.35; }
+    .form-actions { justify-content:flex-end; padding-top:16px; border-top:1px solid #F1F3F5; }
+    textarea.form-input { resize:vertical; min-height:82px; }
+    input[type="file"].form-input { padding:7px; }
+    .check-field { display:flex; align-items:center; gap:9px; min-height:42px; padding:10px 12px; border:1px solid #E9ECEF; border-radius:8px; background:#FAFAFA; font-size:13px; color:#495057; }
+    .check-field input { accent-color:#660099; width:17px; height:17px; }
+    .search-input { padding-left:36px; }
+    .filter-row { display:grid; grid-template-columns:minmax(220px,1fr) minmax(220px,320px) auto; gap:12px; align-items:end; }
+    .table-wrap { width:100%; overflow:auto; border:1px solid #EEF0F2; border-radius:10px; }
+    .data-table { width:100%; border-collapse:collapse; min-width:900px; font-size:12px; }
+    .data-table th { position:sticky; top:0; background:#F8F9FA; color:#6C757D; text-align:left; padding:11px 12px; font-size:10px; text-transform:uppercase; letter-spacing:.45px; white-space:nowrap; z-index:1; }
+    .data-table td { padding:12px; border-top:1px solid #F1F3F5; color:#495057; vertical-align:middle; }
+    .data-table tbody tr:hover { background:#FCFAFE; }
+    .link-button { border:0; background:transparent; padding:0; color:#660099; cursor:pointer; font-weight:700; text-align:left; }
+    .route-number { color:#660099; font-size:12px; font-weight:800; letter-spacing:.4px; }
+    .detail-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+    .detail-grid div,.assignment-summary div,.drawer-grid div { display:flex; flex-direction:column; gap:4px; }
+    .detail-grid span,.assignment-summary span,.drawer-grid span { color:#ADB5BD; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; }
+    .detail-grid strong,.assignment-summary strong,.drawer-grid strong { font-size:13px; color:#343A40; overflow-wrap:anywhere; }
+    .assignment-card { padding:20px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:20px; align-items:center; }
+    .assignment-card h3 { margin:9px 0 17px; font-size:18px; }
+    .assignment-side { display:flex; flex-direction:column; gap:8px; min-width:165px; }
+    .active-route { padding:24px; display:flex; flex-direction:column; gap:20px; }
+    .active-route-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+    .active-route h2 { margin:5px 0 0; font-size:21px; }
+    .eyebrow { color:#660099; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; }
+    .route-progress { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; position:relative; }
+    .route-step { display:flex; align-items:center; flex-direction:column; gap:7px; color:#ADB5BD; text-align:center; position:relative; }
+    .route-step:before { content:""; height:3px; position:absolute; left:-50%; right:50%; top:16px; background:#E9ECEF; z-index:0; }
+    .route-step:first-child:before { display:none; }
+    .route-step span { width:34px; height:34px; border-radius:50%; background:#E9ECEF; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; z-index:1; }
+    .route-step.done { color:#660099; }
+    .route-step.done span,.route-step.done:before { background:#660099; color:#fff; }
+    .route-step small { font-size:10px; font-weight:600; }
+    .agenda-item { display:grid; grid-template-columns:54px 2px minmax(0,1fr) auto auto; gap:14px; align-items:center; padding:12px 0; border-bottom:1px solid #F1F3F5; }
+    .agenda-item:last-child { border:0; }
+    .agenda-time { color:#660099; font-weight:800; text-align:right; }
+    .agenda-time small { display:block; color:#ADB5BD; font-weight:500; }
+    .agenda-line { height:42px; background:#E9D8F2; border-radius:2px; }
+    .agenda-copy { display:flex; flex-direction:column; gap:4px; }
+    .agenda-copy span { color:#6C757D; font-size:12px; }
+    .team-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+    .team-card { padding:18px; display:grid; grid-template-columns:auto 1fr auto; gap:13px; align-items:center; }
+    .team-card h3 { margin:0 0 2px; font-size:15px; }
+    .team-card p { margin:0 0 8px; font-size:12px; color:#6C757D; }
+    .team-stat { text-align:center; display:flex; flex-direction:column; }
+    .team-stat strong { font-size:20px; color:#660099; }
+    .team-stat span { font-size:10px; color:#ADB5BD; }
+    .empty-state { padding:34px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:#ADB5BD; min-height:150px; }
+    .empty-state h3 { margin:10px 0 4px; color:#495057; font-size:15px; }
+    .empty-state p { margin:0; max-width:430px; font-size:12px; line-height:1.5; }
+    .loading-state { min-height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:#6C757D; }
+    .spinner { width:32px; height:32px; border:3px solid #E9ECEF; border-top-color:#660099; border-radius:50%; animation:spin .75s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .error-banner,.unplanned-banner,.info-box { display:flex; align-items:flex-start; gap:10px; border-radius:10px; padding:13px 15px; }
+    .error-banner { background:#FFF5F5; color:#DC3545; margin-bottom:18px; }
+    .error-banner p,.unplanned-banner p { margin:3px 0 0; font-size:12px; }
+    .unplanned-banner { background:#FFF7ED; color:#C05621; grid-column:1/-1; }
+    .info-box { background:#EFF6FF; color:#0D6EFD; font-size:12px; line-height:1.45; }
+    .modal-wide { max-width:820px; max-height:92vh; overflow:auto; }
+    .modal-head { padding:20px 22px; border-bottom:1px solid #E9ECEF; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .modal-head h2 { margin:0; font-size:19px; }
+    .modal-head p { margin:5px 0 0; color:#6C757D; font-size:12px; }
+    .modal-body { padding:20px 22px; display:flex; flex-direction:column; gap:16px; }
+    .modal-actions { justify-content:flex-end; padding:15px 22px; border-top:1px solid #E9ECEF; }
+    .assignment-summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; background:#F8F9FA; border-radius:10px; padding:14px; }
+    .km-comparison { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; background:#F8F9FA; border-radius:9px; padding:12px; font-size:12px; color:#495057; }
+    .km-comparison.negative { background:#FFF5F5; color:#DC3545; }
+    .drawer-head { position:sticky; top:0; background:#fff; z-index:2; padding:20px; border-bottom:1px solid #E9ECEF; display:flex; justify-content:space-between; }
+    .drawer-head h2 { margin:4px 0 0; font-size:21px; }
+    .drawer-body { padding:20px; display:flex; flex-direction:column; gap:18px; }
+    .drawer-status { display:flex; gap:8px; flex-wrap:wrap; }
+    .drawer-section { border-top:1px solid #F1F3F5; padding-top:16px; }
+    .drawer-section h3 { margin:0 0 12px; font-size:13px; color:#4A0072; }
+    .drawer-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
+    .timeline { display:flex; flex-direction:column; }
+    .timeline-item { display:grid; grid-template-columns:28px 1fr; gap:10px; position:relative; padding-bottom:17px; }
+    .timeline-item:before { content:""; position:absolute; left:13px; top:26px; bottom:0; width:2px; background:#E9D8F2; }
+    .timeline-item:last-child:before { display:none; }
+    .timeline-marker { width:28px; height:28px; border-radius:50%; background:#F3E8FF; color:#660099; display:flex; align-items:center; justify-content:center; }
+    .timeline-item strong { font-size:12px; color:#343A40; }
+    .timeline-item p { margin:3px 0; color:#6C757D; font-size:11px; }
+    .timeline-item small,.timeline-item > div:last-child > span { display:block; color:#ADB5BD; font-size:10px; line-height:1.45; }
+    .toast-host { position:fixed; right:20px; bottom:20px; z-index:3000; width:min(390px,calc(100vw - 30px)); pointer-events:none; }
+    .toast { display:grid; grid-template-columns:auto 1fr auto; gap:11px; align-items:flex-start; background:#fff; border-radius:12px; padding:14px; box-shadow:0 12px 35px rgba(0,0,0,.18); border-left:4px solid #0D6EFD; pointer-events:auto; animation:toastIn .2s ease; }
+    .toast-success { border-color:#198754; color:#198754; }.toast-error { border-color:#DC3545; color:#DC3545; }.toast-warning { border-color:#FD7E14; color:#C05621; }.toast-info { border-color:#0D6EFD; color:#0D6EFD; }
+    .toast strong { font-size:13px; color:#343A40; }.toast p { margin:3px 0 0; font-size:12px; line-height:1.35; color:#6C757D; }
+    @keyframes toastIn { from { opacity:0; transform:translateY(12px); } }
+    .notification-item { border:0; width:100%; }
+    .notification-message { display:block; font-size:11px; color:#6C757D; margin:3px 0; line-height:1.35; }
+    .notification-item small { color:#ADB5BD; font-size:10px; }
+    .demo-warning { margin:8px 10px 10px; padding:9px; border-radius:7px; background:#FFF7ED; color:#9A5B14; font-size:10px; line-height:1.35; }
+    .metric-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+    .metric-card { padding:16px; display:flex; flex-direction:column; gap:5px; }
+    .metric-card span { font-size:11px; color:#6C757D; }.metric-card strong { font-size:20px; color:#1A1A1A; }.metric-card small { font-size:10px; color:#ADB5BD; }
+    .dashboard-filters { display:grid; grid-template-columns:repeat(4,minmax(160px,1fr)); gap:11px; align-items:end; }
+    .compact-filter { display:flex; flex-direction:column; gap:5px; min-width:0; }
+    .dashboard-chart-layout { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .chart-card { padding:18px; min-height:225px; }
+    .chart-card h3 { margin:0 0 16px; font-size:14px; }
+    .bar-chart { display:flex; flex-direction:column; gap:11px; }
+    .bar-row { display:grid; grid-template-columns:minmax(90px,135px) 1fr 62px; gap:9px; align-items:center; font-size:11px; }
+    .bar-row > span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#6C757D; }
+    .bar-row strong { text-align:right; color:#343A40; font-size:11px; }
+    .bar-track { height:9px; background:#F1F3F5; border-radius:6px; overflow:hidden; }
+    .bar-fill { height:100%; border-radius:6px; min-width:3px; }
+    .pagination { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-top:13px; font-size:11px; color:#6C757D; }
+    .pagination > div { display:flex; gap:7px; }
+    @media(max-width:1200px){
+      .form-grid,.dashboard-filters { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .team-grid,.metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+    @media(max-width:900px){
+      .detail-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .assignment-card { grid-template-columns:1fr; }
+      .assignment-side { flex-direction:row; }
+      .route-progress { overflow-x:auto; grid-template-columns:repeat(6,100px); padding-bottom:6px; }
+    }
+    @media(max-width:768px){
+      body { overflow:hidden; }
+      .page-header { flex-direction:column; }
+      .page-actions,.page-actions button { width:100%; }
+      .page-actions button { justify-content:center; }
+      .form-grid,.form-grid-2,.dashboard-filters,.metric-grid,.dashboard-chart-layout,.team-grid,.detail-grid,.drawer-grid,.assignment-summary,.km-comparison { grid-template-columns:1fr !important; }
+      .form-card,.section-card,.active-route { padding:16px; }
+      .data-table { min-width:760px; }
+      .filter-row { grid-template-columns:1fr; }
+      .assignment-side { flex-direction:column; }
+      .agenda-item { grid-template-columns:48px 2px 1fr; }
+      .agenda-item > .badge,.agenda-item > button { grid-column:3; justify-self:start; }
+      .kpi-card { min-height:82px; }
+      .modal-box { width:calc(100% - 18px); max-height:95vh; overflow:auto; }
+      .modal-head,.modal-body,.modal-actions { padding-left:15px; padding-right:15px; }
+      .modal-actions button { flex:1; justify-content:center; }
+      .toast-host { right:15px; bottom:15px; }
+    }
+
+
+    .readonly-field { background:#F3F4F6 !important; color:#495057; cursor:not-allowed; }
+    .location-input-wrap { position:relative; }
+    .attachment-list { display:flex; flex-direction:column; gap:8px; }
+    .attachment-item { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:10px; align-items:center; padding:10px 12px; border:1px solid #E9ECEF; border-radius:9px; background:#FAFAFA; }
+    .attachment-item strong { display:block; font-size:12px; color:#343A40; overflow-wrap:anywhere; }
+    .attachment-item small { display:block; margin-top:2px; color:#6C757D; font-size:10px; }
+    .attachment-empty { color:#ADB5BD; font-size:12px; }
+    .field-warning { color:#C05621; font-size:11px; line-height:1.35; }
+    .same-day-routes { display:flex; flex-direction:column; gap:6px; margin-top:7px; }
+    .same-day-route { padding:7px 9px; border-radius:7px; background:#FFF7ED; color:#9A5B14; font-size:11px; }
+
+
+    .technician-picker { display:flex; flex-direction:column; gap:8px; max-height:420px; overflow:auto; padding-right:4px; }
+    .technician-option { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:11px; align-items:center; padding:11px 12px; border:1px solid #E9ECEF; border-radius:10px; background:#fff; cursor:pointer; transition:border-color .15s,background .15s; }
+    .technician-option:hover { border-color:#8B2FC9; background:#FCFAFE; }
+    .technician-option:has(input:checked) { border-color:#660099; background:#F8F0FC; box-shadow:0 0 0 2px rgba(102,0,153,.08); }
+    .technician-option input { width:18px; height:18px; accent-color:#660099; }
+    .technician-meta { display:flex; flex-direction:column; gap:3px; min-width:0; }
+    .technician-meta strong { color:#343A40; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .technician-meta small { color:#6C757D; font-size:11px; }
+    .technician-distance { text-align:right; min-width:88px; }
+    .technician-distance strong { display:block; color:#660099; font-size:13px; }
+    .technician-distance small { color:#ADB5BD; font-size:10px; }
+    .assignment-team { display:flex; flex-direction:column; gap:7px; }
+    .assignment-team-item { display:flex; justify-content:space-between; gap:12px; padding:8px 10px; border-radius:8px; background:#F8F9FA; font-size:11px; color:#495057; }
+    .assignment-team-item strong { color:#343A40; }
+
+  
+    /* Gestão de Atividades — fluxo por ID, equipe e execução individual */
+    .summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+    .summary-card{padding:16px;border:1px solid #EEF0F2;border-radius:12px;background:#fff}
+    .summary-card span{display:block;color:#6C757D;font-size:11px}
+    .summary-card strong{display:block;margin-top:4px;font-size:21px;color:#1A1A1A}
+    .pill-row{display:flex;gap:7px;flex-wrap:wrap}
+    .participant-list{display:flex;flex-direction:column;gap:10px}
+    .participant-card{border:1px solid #E9ECEF;border-radius:12px;padding:14px;background:#fff}
+    .participant-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .participant-head h4{margin:0;font-size:14px}
+    .participant-meta{margin-top:4px;color:#6C757D;font-size:11px}
+    .participant-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:12px}
+    .participant-stat{padding:9px;border-radius:8px;background:#F8F9FA}
+    .participant-stat span{display:block;color:#ADB5BD;font-size:9px;text-transform:uppercase;font-weight:700}
+    .participant-stat strong{display:block;margin-top:3px;color:#343A40;font-size:12px}
+    .daily-log-list{display:flex;flex-direction:column;gap:7px;margin-top:11px}
+    .daily-log{display:grid;grid-template-columns:100px 90px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;background:#FAFAFA;border-radius:8px;font-size:11px}
+    .daily-log strong{color:#343A40}.daily-log span{color:#6C757D}
+    .validation-banner{padding:14px 16px;border-radius:10px;background:#F3E8FF;color:#4A0072;font-size:12px;line-height:1.45}
+    .area-chip{display:inline-flex;align-items:center;padding:4px 9px;border-radius:20px;background:#EFF6FF;color:#0D6EFD;font-size:11px;font-weight:700}
+    .responsible-chip{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;background:#FFF3CD;color:#9A6700;font-size:10px;font-weight:700}
+    .team-progress{height:8px;background:#E9ECEF;border-radius:6px;overflow:hidden}
+    .team-progress span{display:block;height:100%;background:#660099;border-radius:6px}
+    .split-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .form-subtitle{font-size:12px;color:#6C757D;margin-top:-10px}
+    .checkbox-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .radio-line{display:flex;align-items:center;gap:8px}
+    .money-input{font-variant-numeric:tabular-nums}
+    @media(max-width:1000px){.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.participant-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:768px){.summary-grid,.checkbox-grid,.participant-stats{grid-template-columns:1fr}.daily-log{grid-template-columns:1fr}}
+
+  
+
+    /* Equipes por Área */
+    .area-tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .area-tab{border:1px solid #DEE2E6;background:#fff;color:#495057;border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:650;font-size:12px;transition:.15s}
+    .area-tab:hover{border-color:#8B2FC9;color:#660099}
+    .area-tab.active{background:#660099;border-color:#660099;color:#fff}
+    .team-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+    .area-leadership-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .leadership-card{padding:18px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:13px;align-items:center}
+    .leadership-card h3{margin:0 0 3px;font-size:15px;color:#343A40}
+    .leadership-card p{margin:0;color:#6C757D;font-size:11px;overflow-wrap:anywhere}
+    .leadership-role{display:inline-flex;margin-top:8px;padding:3px 9px;border-radius:999px;background:#F3E8FF;color:#660099;font-size:10px;font-weight:750}
+    .team-area-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:#6C757D;font-size:12px}
+    .team-status-line{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+    .availability-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+    .availability-dot.available{background:#198754}
+    .availability-dot.busy{background:#FD7E14}
+    .team-activity-copy{font-size:10px;color:#6C757D;margin-top:5px;line-height:1.35}
+    .team-empty-card{padding:24px;text-align:center;color:#6C757D}
+    .team-empty-card strong{display:block;color:#343A40;margin-bottom:5px}
+    @media(max-width:1000px){.team-summary-grid,.area-leadership-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:768px){.team-summary-grid,.area-leadership-grid{grid-template-columns:1fr}.area-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.area-tab{width:100%}}
+
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <script>
+  'use strict';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD0vPBFqRT_PPDATZ_DzMK6zXCFqjgiSvw",
+    authDomain: "carimbosnt.firebaseapp.com",
+    databaseURL: "https://carimbosnt-default-rtdb.firebaseio.com",
+    projectId: "carimbosnt",
+    storageBucket: "carimbosnt.firebasestorage.app",
+    messagingSenderId: "972534069541",
+    appId: "1:972534069541:web:73addd8ba56552398082cc",
+    measurementId: "G-JCPXSDQM7M"
+  };
+
+  let firebaseApp=null,database=null,auth=null;
+  try{
+    firebaseApp=firebase.apps.length?firebase.app():firebase.initializeApp(firebaseConfig);
+    database=firebase.database();
+    auth=firebase.auth();
+  }catch(error){
+    console.warn('Firebase indisponível; o portal continuará com dados locais.',error);
+  }
+
+  const DB_ROOT='gestaoRotas';
+  const DB_COLLECTION='activities';
+
+const I = {
+      home: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+      map: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>',
+      calendar: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+      plus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+      check: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+      checkCircle: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+      users: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      barChart: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>',
+      fileText: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+      settings: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+      bell: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+      search: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+      user: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      left: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>',
+      right: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
+      down: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
+      x: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+      mapPin: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+      clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+      alert: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+      trending: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+      logout: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+      filter: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>',
+      download: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+      phone: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.81 5.81l.74-.74a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+      navigation: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>',
+      activity: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+      edit: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+      eye: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+      help: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+      info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+      upload: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+      refresh: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+      grid: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+      list: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+      switchCamera: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="5" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="19"/></svg>',
+      arrowRight: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+      target: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+      alertCircle: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+      xCircle: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+    };
+
+const referenceData = {
+      managements:['Gerência Backbone'],
+      areas:['Backbone'],
+      idTypes:['TA','BD','ATP','OSX','Outros'],
+      regionals:['Estado de São Paulo'],
+      activities:['Inspeção','SITE','Construção','Treinamento','B2B','Logística','Outras'],
+      priorities:['Baixa','Média','Alta','Crítica'],
+      // Base teste: 39 Técnicos ativos, todos vinculados à área Backbone, importados de base-teste.xlsx.
+      technicians:[
+        {id:"tech-001",name:"Nathalia De Lima Pereira",email:"nome.sobrenome@telefonica.com",city:"Sao Paulo",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-002",name:"Wellington Victor De Araujo Barbosa",email:"nome.sobrenome@telefonica.com",city:"Piracicaba",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-003",name:"Kelleman Rodrigues",email:"nome.sobrenome@telefonica.com",city:"Caraguatatuba",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-004",name:"Marcos Vinicius Gutierres",email:"nome.sobrenome@telefonica.com",city:"Jundiaí",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-005",name:"Andreia De Paula Santos",email:"nome.sobrenome@telefonica.com",city:"Jundiaí",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-006",name:"Alexandre Antunes Leite",email:"nome.sobrenome@telefonica.com",city:"Sao Jose Dos Campos",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-007",name:"Thiago Felipe Da Silva",email:"nome.sobrenome@telefonica.com",city:"Jundiaí",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-008",name:"Igor Santana Do Livramento Rodrigues",email:"nome.sobrenome@telefonica.com",city:"Indaiatuba",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-009",name:"Edilson Duarte Filho",email:"nome.sobrenome@telefonica.com",city:"Jundiaí",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-010",name:"Fernando Ricardo De Freitas",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-011",name:"Germano De Azevedo Matos Neto",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-012",name:"Vander Luis Teodoro",email:"nome.sobrenome@telefonica.com",city:"Sao Jose Do Rio Preto",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-013",name:"Joab Cardoso Rocha Santos",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-014",name:"Carlos Henrique Dos Santos",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-015",name:"Rodrigo Mendes Dos Santos",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-016",name:"Leandro Vieira Dos Santos Silva",email:"nome.sobrenome@telefonica.com",city:"Sao Jose Dos Campos",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-017",name:"Ricardo Donizete Zinhithi Nozasa",email:"nome.sobrenome@telefonica.com",city:"Ribeirao Preto",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-018",name:"Rodrigo Pereira De Sousa",email:"nome.sobrenome@telefonica.com",city:"Ribeirão Preto",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-019",name:"Henry Ferreira Martins",email:"nome.sobrenome@telefonica.com",city:"Ribeirao Preto",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-020",name:"Paulo Henrique Junqueira",email:"nome.sobrenome@telefonica.com",city:"Ribeirão Preto",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-021",name:"Christiano Aranha Barros",email:"nome.sobrenome@telefonica.com",city:"Sorocaba",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-022",name:"Marcio Viana Mataragia",email:"nome.sobrenome@telefonica.com",city:"Ribeirao Preto",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-023",name:"Maicon Jhonata Cahoni De Souza",email:"nome.sobrenome@telefonica.com",city:"Araçatuba",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-024",name:"Lucas Augusto Souza Pinheiro",email:"nome.sobrenome@telefonica.com",city:"Ribeirão Preto",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-025",name:"Glauber Tadeu Dorta",email:"nome.sobrenome@telefonica.com",city:"São José Do Rio Preto",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-026",name:"Phablo Rodrigues Do Prado",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-027",name:"Nadilton Matos Santos",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-028",name:"Pedro Henrique Faria Dos Anjos",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-029",name:"Renan Felipe Sabino Lopes",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-030",name:"Breno Luís Ferreira",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-031",name:"Ivan Pedro Jose",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-032",name:"Matheus Thiago De Andrade",email:"nome.sobrenome@telefonica.com",city:"São José Dos Campos",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-033",name:"Brian Kelvin De Souza Cardoso",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-034",name:"Julio Cesar Baitelo Junior",email:"nome.sobrenome@telefonica.com",city:"Mogi Guaçu",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-035",name:"Carlos Henrique Macedo De Almeida",email:"nome.sobrenome@telefonica.com",city:"Campinas",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-036",name:"George Luiz Da Silva",email:"nome.sobrenome@telefonica.com",city:"Araraquara",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-037",name:"Rafael Henrique Fernandes Almeida",email:"nome.sobrenome@telefonica.com",city:"Jundiaí",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-038",name:"Roberto Morais De Oliveira",email:"nome.sobrenome@telefonica.com",city:"Jundiaí",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true},
+        {id:"tech-039",name:"Jonathan Silva Dos Santos",email:"nome.sobrenome@telefonica.com",city:"Ribeirão Preto",state:"SP",availability:"Disponível",area:"Backbone",management:"Gerência Backbone",active:true}
+      ],
+      locations:[
+        {id:'americana',name:'Americana',city:'Americana',state:'SP',latitude:-22.7374,longitude:-47.3331,active:true},
+        {id:'amparo',name:'Amparo',city:'Amparo',state:'SP',latitude:-22.7013,longitude:-46.7641,active:true},
+        {id:'araatuba',name:'Araçatuba',city:'Araçatuba',state:'SP',latitude:-21.2089,longitude:-50.4328,active:true},
+        {id:'araraquara',name:'Araraquara',city:'Araraquara',state:'SP',latitude:-21.7845,longitude:-48.178,active:true},
+        {id:'araras',name:'Araras',city:'Araras',state:'SP',latitude:-22.3572,longitude:-47.3842,active:true},
+        {id:'assis',name:'Assis',city:'Assis',state:'SP',latitude:-22.6617,longitude:-50.4122,active:true},
+        {id:'atibaia',name:'Atibaia',city:'Atibaia',state:'SP',latitude:-23.1171,longitude:-46.5563,active:true},
+        {id:'avar',name:'Avaré',city:'Avaré',state:'SP',latitude:-23.1067,longitude:-48.9251,active:true},
+        {id:'barretos',name:'Barretos',city:'Barretos',state:'SP',latitude:-20.5531,longitude:-48.5698,active:true},
+        {id:'barueri',name:'Barueri',city:'Barueri',state:'SP',latitude:-23.5112,longitude:-46.8765,active:true},
+        {id:'batatais',name:'Batatais',city:'Batatais',state:'SP',latitude:-20.8913,longitude:-47.5851,active:true},
+        {id:'bauru',name:'Bauru',city:'Bauru',state:'SP',latitude:-22.3145,longitude:-49.0587,active:true},
+        {id:'bebedouro',name:'Bebedouro',city:'Bebedouro',state:'SP',latitude:-20.9491,longitude:-48.4791,active:true},
+        {id:'bertioga',name:'Bertioga',city:'Bertioga',state:'SP',latitude:-23.8544,longitude:-46.1386,active:true},
+        {id:'boituva',name:'Boituva',city:'Boituva',state:'SP',latitude:-23.2837,longitude:-47.6722,active:true},
+        {id:'botucatu',name:'Botucatu',city:'Botucatu',state:'SP',latitude:-22.8837,longitude:-48.4437,active:true},
+        {id:'bragana-paulista',name:'Bragança Paulista',city:'Bragança Paulista',state:'SP',latitude:-22.9527,longitude:-46.5419,active:true},
+        {id:'caieiras',name:'Caieiras',city:'Caieiras',state:'SP',latitude:-23.3648,longitude:-46.7408,active:true},
+        {id:'cajamar',name:'Cajamar',city:'Cajamar',state:'SP',latitude:-23.355,longitude:-46.8781,active:true},
+        {id:'campinas',name:'Campinas',city:'Campinas',state:'SP',latitude:-22.9056,longitude:-47.0608,active:true},
+        {id:'campo-limpo-paulista',name:'Campo Limpo Paulista',city:'Campo Limpo Paulista',state:'SP',latitude:-23.206,longitude:-46.7844,active:true},
+        {id:'caraguatatuba',name:'Caraguatatuba',city:'Caraguatatuba',state:'SP',latitude:-23.6203,longitude:-45.4131,active:true},
+        {id:'carapicuba',name:'Carapicuíba',city:'Carapicuíba',state:'SP',latitude:-23.5235,longitude:-46.8407,active:true},
+        {id:'catanduva',name:'Catanduva',city:'Catanduva',state:'SP',latitude:-21.1378,longitude:-48.9721,active:true},
+        {id:'cotia',name:'Cotia',city:'Cotia',state:'SP',latitude:-23.6022,longitude:-46.919,active:true},
+        {id:'cubato',name:'Cubatão',city:'Cubatão',state:'SP',latitude:-23.8911,longitude:-46.424,active:true},
+        {id:'diadema',name:'Diadema',city:'Diadema',state:'SP',latitude:-23.6813,longitude:-46.6205,active:true},
+        {id:'embu-das-artes',name:'Embu das Artes',city:'Embu das Artes',state:'SP',latitude:-23.6498,longitude:-46.852,active:true},
+        {id:'franca',name:'Franca',city:'Franca',state:'SP',latitude:-20.5386,longitude:-47.4008,active:true},
+        {id:'franco-da-rocha',name:'Franco da Rocha',city:'Franco da Rocha',state:'SP',latitude:-23.322,longitude:-46.729,active:true},
+        {id:'guaratinguet',name:'Guaratinguetá',city:'Guaratinguetá',state:'SP',latitude:-22.816,longitude:-45.1924,active:true},
+        {id:'guaruj',name:'Guarujá',city:'Guarujá',state:'SP',latitude:-23.9931,longitude:-46.2564,active:true},
+        {id:'guarulhos',name:'Guarulhos',city:'Guarulhos',state:'SP',latitude:-23.4543,longitude:-46.5337,active:true},
+        {id:'hortolndia',name:'Hortolândia',city:'Hortolândia',state:'SP',latitude:-22.8583,longitude:-47.22,active:true},
+        {id:'indaiatuba',name:'Indaiatuba',city:'Indaiatuba',state:'SP',latitude:-23.0903,longitude:-47.218,active:true},
+        {id:'itanham',name:'Itanhaém',city:'Itanhaém',state:'SP',latitude:-24.1736,longitude:-46.788,active:true},
+        {id:'itapetininga',name:'Itapetininga',city:'Itapetininga',state:'SP',latitude:-23.5886,longitude:-48.0483,active:true},
+        {id:'itapeva',name:'Itapeva',city:'Itapeva',state:'SP',latitude:-23.9824,longitude:-48.8759,active:true},
+        {id:'itapevi',name:'Itapevi',city:'Itapevi',state:'SP',latitude:-23.5488,longitude:-46.9347,active:true},
+        {id:'itatiba',name:'Itatiba',city:'Itatiba',state:'SP',latitude:-23.0035,longitude:-46.8464,active:true},
+        {id:'itu',name:'Itu',city:'Itu',state:'SP',latitude:-23.2642,longitude:-47.2993,active:true},
+        {id:'jaboticabal',name:'Jaboticabal',city:'Jaboticabal',state:'SP',latitude:-21.2554,longitude:-48.3224,active:true},
+        {id:'jacare',name:'Jacareí',city:'Jacareí',state:'SP',latitude:-23.3053,longitude:-45.9658,active:true},
+        {id:'jandira',name:'Jandira',city:'Jandira',state:'SP',latitude:-23.5275,longitude:-46.9023,active:true},
+        {id:'ja',name:'Jaú',city:'Jaú',state:'SP',latitude:-22.2964,longitude:-48.5578,active:true},
+        {id:'jundia',name:'Jundiaí',city:'Jundiaí',state:'SP',latitude:-23.1857,longitude:-46.8978,active:true},
+        {id:'leme',name:'Leme',city:'Leme',state:'SP',latitude:-22.1856,longitude:-47.3908,active:true},
+        {id:'lenis-paulista',name:'Lençóis Paulista',city:'Lençóis Paulista',state:'SP',latitude:-22.5986,longitude:-48.8007,active:true},
+        {id:'limeira',name:'Limeira',city:'Limeira',state:'SP',latitude:-22.5646,longitude:-47.4017,active:true},
+        {id:'lorena',name:'Lorena',city:'Lorena',state:'SP',latitude:-22.7334,longitude:-45.1197,active:true},
+        {id:'marlia',name:'Marília',city:'Marília',state:'SP',latitude:-22.2171,longitude:-49.9501,active:true},
+        {id:'mato',name:'Matão',city:'Matão',state:'SP',latitude:-21.6025,longitude:-48.364,active:true},
+        {id:'mau',name:'Mauá',city:'Mauá',state:'SP',latitude:-23.6677,longitude:-46.4613,active:true},
+        {id:'mogi-das-cruzes',name:'Mogi das Cruzes',city:'Mogi das Cruzes',state:'SP',latitude:-23.5229,longitude:-46.1883,active:true},
+        {id:'mogi-guau',name:'Mogi Guaçu',city:'Mogi Guaçu',state:'SP',latitude:-22.3675,longitude:-46.945,active:true},
+        {id:'mogi-mirim',name:'Mogi Mirim',city:'Mogi Mirim',state:'SP',latitude:-22.4332,longitude:-46.9532,active:true},
+        {id:'mongagu',name:'Mongaguá',city:'Mongaguá',state:'SP',latitude:-24.0809,longitude:-46.6265,active:true},
+        {id:'osasco',name:'Osasco',city:'Osasco',state:'SP',latitude:-23.5325,longitude:-46.7917,active:true},
+        {id:'ourinhos',name:'Ourinhos',city:'Ourinhos',state:'SP',latitude:-22.9797,longitude:-49.8706,active:true},
+        {id:'paulnia',name:'Paulínia',city:'Paulínia',state:'SP',latitude:-22.7542,longitude:-47.1488,active:true},
+        {id:'perube',name:'Peruíbe',city:'Peruíbe',state:'SP',latitude:-24.3208,longitude:-46.9984,active:true},
+        {id:'pindamonhangaba',name:'Pindamonhangaba',city:'Pindamonhangaba',state:'SP',latitude:-22.9246,longitude:-45.4613,active:true},
+        {id:'piracicaba',name:'Piracicaba',city:'Piracicaba',state:'SP',latitude:-22.7338,longitude:-47.6476,active:true},
+        {id:'po',name:'Poá',city:'Poá',state:'SP',latitude:-23.528,longitude:-46.3457,active:true},
+        {id:'praia-grande',name:'Praia Grande',city:'Praia Grande',state:'SP',latitude:-24.0089,longitude:-46.412,active:true},
+        {id:'presidente-prudente',name:'Presidente Prudente',city:'Presidente Prudente',state:'SP',latitude:-22.1207,longitude:-51.3925,active:true},
+        {id:'registro',name:'Registro',city:'Registro',state:'SP',latitude:-24.4979,longitude:-47.8449,active:true},
+        {id:'ribeiro-pires',name:'Ribeirão Pires',city:'Ribeirão Pires',state:'SP',latitude:-23.7067,longitude:-46.4058,active:true},
+        {id:'ribeiro-preto',name:'Ribeirão Preto',city:'Ribeirão Preto',state:'SP',latitude:-21.1775,longitude:-47.8103,active:true},
+        {id:'rio-claro',name:'Rio Claro',city:'Rio Claro',state:'SP',latitude:-22.4149,longitude:-47.5651,active:true},
+        {id:'salto',name:'Salto',city:'Salto',state:'SP',latitude:-23.2008,longitude:-47.2869,active:true},
+        {id:'santana-de-parnaba',name:'Santana de Parnaíba',city:'Santana de Parnaíba',state:'SP',latitude:-23.4439,longitude:-46.9178,active:true},
+        {id:'santo-andr',name:'Santo André',city:'Santo André',state:'SP',latitude:-23.6639,longitude:-46.5383,active:true},
+        {id:'santos',name:'Santos',city:'Santos',state:'SP',latitude:-23.9608,longitude:-46.3336,active:true},
+        {id:'so-bernardo-do-campo',name:'São Bernardo do Campo',city:'São Bernardo do Campo',state:'SP',latitude:-23.6914,longitude:-46.5646,active:true},
+        {id:'so-caetano-do-sul',name:'São Caetano do Sul',city:'São Caetano do Sul',state:'SP',latitude:-23.6234,longitude:-46.5513,active:true},
+        {id:'so-carlos',name:'São Carlos',city:'São Carlos',state:'SP',latitude:-22.0174,longitude:-47.886,active:true},
+        {id:'so-jos-do-rio-preto',name:'São José do Rio Preto',city:'São José do Rio Preto',state:'SP',latitude:-20.8113,longitude:-49.3758,active:true},
+        {id:'so-jos-dos-campos',name:'São José dos Campos',city:'São José dos Campos',state:'SP',latitude:-23.1896,longitude:-45.8841,active:true},
+        {id:'so-paulo',name:'São Paulo',city:'São Paulo',state:'SP',latitude:-23.5505,longitude:-46.6333,active:true},
+        {id:'so-sebastio',name:'São Sebastião',city:'São Sebastião',state:'SP',latitude:-23.8011,longitude:-45.4026,active:true},
+        {id:'so-vicente',name:'São Vicente',city:'São Vicente',state:'SP',latitude:-23.9631,longitude:-46.3919,active:true},
+        {id:'sertozinho',name:'Sertãozinho',city:'Sertãozinho',state:'SP',latitude:-21.1377,longitude:-47.9901,active:true},
+        {id:'sorocaba',name:'Sorocaba',city:'Sorocaba',state:'SP',latitude:-23.5015,longitude:-47.4526,active:true},
+        {id:'sumar',name:'Sumaré',city:'Sumaré',state:'SP',latitude:-22.8219,longitude:-47.2669,active:true},
+        {id:'suzano',name:'Suzano',city:'Suzano',state:'SP',latitude:-23.5425,longitude:-46.3109,active:true},
+        {id:'taboo-da-serra',name:'Taboão da Serra',city:'Taboão da Serra',state:'SP',latitude:-23.6261,longitude:-46.7917,active:true},
+        {id:'tatu',name:'Tatuí',city:'Tatuí',state:'SP',latitude:-23.3556,longitude:-47.8569,active:true},
+        {id:'taubat',name:'Taubaté',city:'Taubaté',state:'SP',latitude:-23.0205,longitude:-45.5565,active:true},
+        {id:'ubatuba',name:'Ubatuba',city:'Ubatuba',state:'SP',latitude:-23.4332,longitude:-45.0834,active:true},
+        {id:'valinhos',name:'Valinhos',city:'Valinhos',state:'SP',latitude:-22.9698,longitude:-46.9974,active:true},
+        {id:'vrzea-paulista',name:'Várzea Paulista',city:'Várzea Paulista',state:'SP',latitude:-23.2136,longitude:-46.8234,active:true},
+        {id:'vinhedo',name:'Vinhedo',city:'Vinhedo',state:'SP',latitude:-23.0302,longitude:-46.9833,active:true},
+        {id:'votorantim',name:'Votorantim',city:'Votorantim',state:'SP',latitude:-23.5403,longitude:-47.4446,active:true}
+      ]
+    };
+
+  // Perfis técnicos de teste. A lista completa deverá vir do cadastro de usuários em produção.
+  referenceData.technicians=[
+    {id:'tech-010',name:'Fernando Ricardo De Freitas',email:'fernando.freitas.demo@telefonica.com',city:'Campinas',state:'SP',availability:'Disponível',area:'Backbone',management:'Gerência Backbone',active:true},
+    {id:'tech-035',name:'Carlos Henrique Macedo De Almeida',email:'carlos.macedo.demo@telefonica.com',city:'Campinas',state:'SP',availability:'Disponível',area:'Backbone',management:'Gerência Backbone',active:true},
+    {id:'tech-021',name:'Christiano Aranha Barros',email:'christiano.barros.demo@telefonica.com',city:'Sorocaba',state:'SP',availability:'Disponível',area:'Backbone',management:'Gerência Backbone',active:true}
+  ];
+
+  referenceData.areas=['Fixa','Móvel','Backbone','B2B'];
+  referenceData.managements=['Gerência Rede Fixa','Gerência Rede Móvel','Gerência Backbone','Gerência B2B'];
+  referenceData.idTypes=['TA','BD','ATP','OSX','Outros'];
+  referenceData.activities=['Inspeção','SITE','Construção','Treinamento','B2B','Logística','Outras'];
+
+  // Diretório organizacional por Área. A base recebida contém a equipe técnica de Backbone.
+  // Analistas, Supervisores e Técnicos das demais Áreas deverão ser cadastrados separadamente.
+  referenceData.analysts=[
+    {id:'analyst-test-001',name:'Analista de Teste',email:'analista.demo@telefonica.com',area:'Backbone',management:'Gerência Backbone',active:true}
+  ];
+  referenceData.supervisors=[
+    {id:'supervisor-test-001',name:'Supervisor de Teste',email:'supervisor.demo@telefonica.com',area:'Backbone',management:'Gerência Backbone',active:true}
+  ];
+
+
+  const AREA_CONFIG={
+    'Fixa':{area:'Fixa',management:'Gerência Rede Fixa',managerId:'area-fixed',managerName:'Reinaldo Marques'},
+    'Móvel':{area:'Móvel',management:'Gerência Rede Móvel',managerId:'area-mobile',managerName:'Rodrigo Padilha'},
+    'Backbone':{area:'Backbone',management:'Gerência Backbone',managerId:'area-backbone',managerName:'Fernando Palamin'},
+    'B2B':{area:'B2B',management:'Gerência B2B',managerId:'area-b2b',managerName:'Fábio Santello'}
+  };
+
+  const profileLabels={
+    analyst:'Analista',
+    supervisor:'Supervisor',
+    technician:'Técnico',
+    dashboard:'Dashboard Gerencial'
+  };
+
+  const testUsers=[
+    {
+      id:'tech-010',name:'Fernando Ricardo De Freitas',email:'fernando.freitas.demo@telefonica.com',
+      initials:'FF',role:'Técnico Backbone — Campinas',profile:'technician',
+      area:'Backbone',management:'Gerência Backbone',city:'Campinas',allowedAreas:['Backbone']
+    },
+    {
+      id:'tech-035',name:'Carlos Henrique Macedo De Almeida',email:'carlos.macedo.demo@telefonica.com',
+      initials:'CM',role:'Técnico Backbone — Campinas',profile:'technician',
+      area:'Backbone',management:'Gerência Backbone',city:'Campinas',allowedAreas:['Backbone']
+    },
+    {
+      id:'tech-021',name:'Christiano Aranha Barros',email:'christiano.barros.demo@telefonica.com',
+      initials:'CB',role:'Técnico Backbone — Sorocaba',profile:'technician',
+      area:'Backbone',management:'Gerência Backbone',city:'Sorocaba',allowedAreas:['Backbone']
+    },
+    {
+      id:'supervisor-test-001',name:'Supervisor de Teste',email:'supervisor.demo@telefonica.com',
+      initials:'ST',role:'Supervisor Backbone',profile:'supervisor',
+      area:'Backbone',management:'Gerência Backbone',city:'Campinas',allowedAreas:['Backbone']
+    },
+    {
+      id:'analyst-test-001',name:'Analista de Teste',email:'analista.demo@telefonica.com',
+      initials:'AT',role:'Analista Backbone',profile:'analyst',
+      area:'Backbone',management:'Gerência Backbone',city:'Campinas',allowedAreas:['Backbone']
+    },
+    {
+      id:'general-management-test-001',name:'Gestão Geral',email:'gestao.geral.demo@telefonica.com',
+      initials:'GG',role:'Gestão Geral',profile:'dashboard',
+      area:'Backbone',management:'Gestão Geral',city:'',allowedAreas:['Fixa','Móvel','Backbone','B2B']
+    }
+  ];
+
+  // Mantido para compatibilidade com funções que consultam um usuário padrão por perfil.
+  const profileUsers={
+    analyst:testUsers.find(user=>user.profile==='analyst'),
+    supervisor:testUsers.find(user=>user.profile==='supervisor'),
+    technician:testUsers.find(user=>user.profile==='technician'),
+    dashboard:testUsers.find(user=>user.profile==='dashboard')
+  };
+
+  const profileColor={analyst:'#8B2FC9',supervisor:'#660099',technician:'#0D6EFD',dashboard:'#4A0072'};
+
+  const PAGE_TITLES={
+    home:'Início',
+    create:'Cadastrar ID',
+    backlog:'Backlog',
+    registrations:'Meus Cadastros',
+    programming:'Programação Dia e D+1',
+    execution:'Em Execução',
+    validations:'Aguardando Validação',
+    activities:'Gestão de IDs',
+    technicians:'Gestão de Técnicos',
+    teams:'Equipes por Área',
+    myActivities:'Minhas Atividades',
+    currentActivity:'Atividade Atual',
+    technicianSchedule:'Programação',
+    history:'Histórico',
+    dashboard:'Visão Geral',
+    reports:'Relatórios'
+  };
+
+  const menuItems={
+    analyst:[
+      ['home','Início','home'],
+      ['create','Cadastrar ID','plus'],
+      ['backlog','Backlog','fileText'],
+      ['registrations','Meus Cadastros','map'],
+      ['teams','Equipe da Área','users'],
+      ['history','Histórico','clock']
+    ],
+    supervisor:[
+      ['home','Início','home'],
+      ['backlog','Backlog','fileText'],
+      ['programming','Programação Dia e D+1','calendar'],
+      ['execution','Em Execução','activity'],
+      ['validations','Aguardando Validação','checkCircle'],
+      ['activities','Gestão de IDs','map'],
+      ['teams','Equipe da Área','users'],
+      ['technicians','Gestão de Técnicos','barChart'],
+      ['reports','Relatórios','barChart']
+    ],
+    technician:[
+      ['home','Início','home'],
+      ['myActivities','Minhas Atividades','map'],
+      ['currentActivity','Atividade Atual','navigation'],
+      ['technicianSchedule','Programação','calendar'],
+      ['history','Histórico','clock']
+    ],
+    dashboard:[
+      ['dashboard','Visão Geral','barChart'],
+      ['backlog','Backlog','fileText'],
+      ['programming','Programação','calendar'],
+      ['activities','Gestão de IDs','map'],
+      ['teams','Equipes por Área','users'],
+      ['technicians','Gestão de Técnicos','barChart'],
+      ['reports','Relatórios','download']
+    ]
+  };
+
+  const STATUS_CONFIG={
+    backlog:{label:'Backlog',badge:'badge-warning',color:'#FD7E14'},
+    returned_to_analyst:{label:'Devolvida ao Analista',badge:'badge-danger',color:'#DC3545'},
+    assigned:{label:'Programada e atribuída',badge:'badge-info',color:'#0D6EFD'},
+    in_execution:{label:'Em execução',badge:'badge-vivo',color:'#660099'},
+    partially_completed:{label:'Parcialmente concluída',badge:'badge-warning',color:'#FD7E14'},
+    awaiting_supervisor_validation:{label:'Aguardando validação',badge:'badge-info',color:'#0D6EFD'},
+    returned_for_adjustment:{label:'Devolvida para ajuste',badge:'badge-warning',color:'#FD7E14'},
+    validated_compliant:{label:'Conforme',badge:'badge-success',color:'#198754'},
+    validated_non_compliant:{label:'Não conforme',badge:'badge-danger',color:'#DC3545'},
+    cancelled:{label:'Cancelada',badge:'badge-gray',color:'#6C757D'}
+  };
+
+  const PARTICIPANT_STATUS={
+    assigned:'Atribuída',
+    accepted:'Aceita',
+    in_execution:'Em execução',
+    continued_next_day:'Continua em outro dia',
+    completed:'Concluída',
+    returned_for_adjustment:'Devolvida para ajuste'
+  };
+
+  const today=new Date();
+  const isoDate=date=>new Date(date).toISOString().slice(0,10);
+  const addDays=n=>{const d=new Date();d.setDate(d.getDate()+n);return isoDate(d);};
+  const nowIso=()=>new Date().toISOString();
+  const clone=value=>JSON.parse(JSON.stringify(value));
+  const uid=prefix=>`${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+  const normalizeText=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+  const number=(value,decimals=0)=>Number(value||0).toLocaleString('pt-BR',{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
+  const money=value=>Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const formatDate=value=>value?new Date(`${String(value).slice(0,10)}T12:00:00`).toLocaleDateString('pt-BR'):'—';
+  const formatDateTime=value=>value?new Date(value).toLocaleString('pt-BR'):'—';
+  const sum=(list,selector)=>list.reduce((total,item)=>total+Number(selector(item)||0),0);
+
+  const LOCAL_KEYS={
+    activities:'gestaoAtividades.activities.v2',
+    notifications:'gestaoAtividades.notifications.v2',
+    profile:'gestaoAtividades.profile',
+    page:'gestaoAtividades.page',
+    sidebar:'gestaoAtividades.sidebar',
+    teamArea:'gestaoAtividades.teamArea',
+    testUser:'gestaoAtividades.testUser.v2'
+  };
+
+  function areaDetails(area){return AREA_CONFIG[area]||AREA_CONFIG.Backbone;}
+  function allowedAreas(){
+    const actorData=actor();
+    const list=actorData.allowedAreas||[actorData.area].filter(Boolean);
+    return list.length?list:Object.keys(AREA_CONFIG);
+  }
+  function locationByName(name){
+    const key=normalizeText(name);
+    return referenceData.locations.find(item=>normalizeText(item.name)===key||normalizeText(item.city)===key)||null;
+  }
+  function haversine(a,b){
+    if(!a||!b)return 0;
+    const toRad=value=>value*Math.PI/180;
+    const R=6371;
+    const dLat=toRad(Number(b.latitude)-Number(a.latitude));
+    const dLon=toRad(Number(b.longitude)-Number(a.longitude));
+    const lat1=toRad(Number(a.latitude)),lat2=toRad(Number(b.latitude));
+    const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+    return R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
+  }
+  function estimatedKm(baseCity,destination){
+    const from=locationByName(baseCity),to=locationByName(destination);
+    if(!from||!to)return 0;
+    return Number((haversine(from,to)*1.25).toFixed(1));
+  }
+
+  function activityDisplayId(activity){
+    const type=activity.idType==='Outros'?(activity.idCustomType||'OUTROS'):activity.idType;
+    return `${String(type||'ID').toUpperCase()} ${activity.idNumber||''}`.trim();
+  }
+
+  const initialTestUser=(()=>{
+    const savedId=localStorage.getItem('gestaoAtividades.testUser.v2');
+    return testUsers.find(user=>user.id===savedId)||testUsers.find(user=>user.profile==='analyst')||testUsers[0];
+  })();
+
+  const state={
+    testUserId:initialTestUser.id,
+    profile:initialTestUser.profile,
+    activePage:(()=>{const saved=localStorage.getItem(LOCAL_KEYS.page);return PAGE_TITLES[saved]?saved:'home';})(),
+    sidebarCollapsed:localStorage.getItem(LOCAL_KEYS.sidebar)==='1',
+    teamArea:localStorage.getItem(LOCAL_KEYS.teamArea)||'Backbone',
+    activities:[],
+    directoryUsers:[],
+    notifications:[],
+    modal:null,drawer:null,toast:null,
+    filters:{search:'',area:'',status:'',date:''},
+    loading:false,error:'',
+    currentUser:null,authUserProfile:null,
+    firebaseListenersAttached:false
+  };
+
+  function actor(){
+    const demo=testUsers.find(user=>user.id===state.testUserId)||profileUsers[state.profile]||profileUsers.analyst;
+    const registered=state.authUserProfile||{};
+    const profile=profileLabels[registered.profile]?registered.profile:state.profile;
+    return {
+      id:state.currentUser?.uid||registered.id||demo.id,
+      name:registered.name||registered.displayName||state.currentUser?.displayName||demo.name,
+      email:registered.email||state.currentUser?.email||demo.email,
+      profile,
+      area:registered.area||demo.area,
+      management:registered.management||demo.management,
+      city:registered.city||demo.city||'',
+      allowedAreas:Array.isArray(registered.allowedAreas)?registered.allowedAreas:(registered.accessScope?.areas||demo.allowedAreas||[demo.area])
+    };
+  }
+
+  function normalizeActivity(input){
+    const activity={...input};
+    activity.id=activity.id||uid('activity');
+    activity.idType=activity.idType||activity.operationalCodeType||'Outros';
+    activity.idNumber=activity.idNumber||activity.operationalCode||activity.routeNumber||'';
+    activity.idCustomType=activity.idCustomType||'';
+    activity.area=activity.area||'Backbone';
+    const cfg=areaDetails(activity.area);
+    activity.management=activity.management||cfg.management;
+    activity.managerId=activity.managerId||activity.areaManagerId||cfg.managerId;
+    activity.managerName=activity.managerName||activity.areaManagerName||cfg.managerName;
+    activity.analystId=activity.analystId||activity.createdBy||activity.routePlannerId||'';
+    activity.analystName=activity.analystName||activity.createdByName||activity.routePlannerName||'';
+    activity.destinationLocationName=activity.destinationLocationName||activity.localityName||activity.destination||activity.origin||'';
+    activity.destinationLocationId=activity.destinationLocationId||locationByName(activity.destinationLocationName)?.id||'';
+    activity.activityType=activity.activityType||'Outras';
+    activity.activityDescription=activity.activityDescription||activity.justification||'';
+    activity.programmingAttachments=activity.programmingAttachments||activity.attachments||[];
+    activity.technicianInstructions=activity.technicianInstructions||activity.assignmentInstructions||activity.routePlannerInstructions||'';
+    activity.assignedTechnicians=Array.isArray(activity.assignedTechnicians)?activity.assignedTechnicians:[];
+    if(!activity.assignedTechnicians.length&&activity.technicianId){
+      const tech=referenceData.technicians.find(item=>item.id===activity.technicianId)||{};
+      activity.assignedTechnicians=[{
+        technicianId:activity.technicianId,technicianName:activity.technicianName||tech.name||'Técnico',
+        area:tech.area||activity.area,management:tech.management||activity.management,
+        baseCity:tech.city||'',estimatedKm:Number(activity.estimatedKm||0),isResponsible:true
+      }];
+    }
+    activity.technicianExecutions=activity.technicianExecutions||{};
+    activity.assignedTechnicians.forEach(member=>{
+      const existing=activity.technicianExecutions[member.technicianId]||{};
+      activity.technicianExecutions[member.technicianId]={
+        technicianId:member.technicianId,technicianName:member.technicianName,
+        area:member.area||activity.area,management:member.management||activity.management,baseCity:member.baseCity||'',
+        participantStatus:existing.participantStatus||mapLegacyParticipantStatus(activity.currentStatus),
+        acceptedAt:existing.acceptedAt||activity.acceptedAt||'',
+        startedAt:existing.startedAt||activity.activityStartedAt||'',
+        completedAt:existing.completedAt||activity.completedAt||'',
+        estimatedKm:Number(existing.estimatedKm??member.estimatedKm??0),
+        totalActualKm:Number(existing.totalActualKm??activity.actualKm??0),
+        dailyExecutionLogs:Array.isArray(existing.dailyExecutionLogs)?existing.dailyExecutionLogs:[],
+        executionResult:existing.executionResult||activity.executionResult||'',
+        technicianNotes:existing.technicianNotes||activity.technicianNotes||'',
+        invoiceAmount:Number(existing.invoiceAmount||0),
+        invoiceAttachments:existing.invoiceAttachments||activity.invoiceAttachments||[],
+        completionEvidenceAttachments:existing.completionEvidenceAttachments||activity.completionEvidenceAttachments||[]
+      };
+    });
+    activity.responsibleTechnicianId=activity.responsibleTechnicianId||activity.assignedTechnicians.find(item=>item.isResponsible)?.technicianId||activity.assignedTechnicians[0]?.technicianId||'';
+    activity.responsibleTechnicianName=activity.responsibleTechnicianName||activity.assignedTechnicians.find(item=>item.technicianId===activity.responsibleTechnicianId)?.technicianName||'';
+    activity.usedCable=Boolean(activity.usedCable);
+    activity.cableMeters=Number(activity.cableMeters||0);
+    activity.history=Array.isArray(activity.history)?activity.history:[];
+    activity.version=Number(activity.version||1);
+    activity.currentStatus=mapLegacyGlobalStatus(activity.currentStatus,activity);
+    recalculateActivity(activity,false);
+    return activity;
+  }
+
+  function mapLegacyParticipantStatus(status){
+    if(['completed','validated_compliant','validated_non_compliant'].includes(status))return 'completed';
+    if(['in_execution','in_transit','at_location'].includes(status))return 'in_execution';
+    if(['accepted_by_technician'].includes(status))return 'accepted';
+    return 'assigned';
+  }
+
+  function mapLegacyGlobalStatus(status,activity){
+    const map={
+      draft:'backlog',
+      approved_awaiting_assignment:'backlog',
+      assigned_to_technician:'assigned',
+      accepted_by_technician:'assigned',
+      completed:'awaiting_supervisor_validation',
+      not_completed:'returned_for_adjustment',
+      awaiting_area_validation:'backlog',
+      awaiting_division_approval:'backlog'
+    };
+    return STATUS_CONFIG[status]?status:(map[status]||activity?.currentStatus||'backlog');
+  }
+
+  function saveLocal(){
+    try{
+      localStorage.setItem(LOCAL_KEYS.activities,JSON.stringify(state.activities));
+      localStorage.setItem(LOCAL_KEYS.notifications,JSON.stringify(state.notifications));
+      localStorage.setItem(LOCAL_KEYS.profile,state.profile);
+      localStorage.setItem(LOCAL_KEYS.page,state.activePage);
+      localStorage.setItem(LOCAL_KEYS.sidebar,state.sidebarCollapsed?'1':'0');
+      localStorage.setItem(LOCAL_KEYS.teamArea,state.teamArea||'');
+      localStorage.setItem(LOCAL_KEYS.testUser,state.testUserId||'');
+    }catch(error){console.warn('Não foi possível salvar localmente.',error);}
+  }
+
+  function loadLocal(){
+    try{
+      const saved=JSON.parse(localStorage.getItem(LOCAL_KEYS.activities)||'null');
+      if(Array.isArray(saved))state.activities=saved.map(normalizeActivity);
+      const notifications=JSON.parse(localStorage.getItem(LOCAL_KEYS.notifications)||'[]');
+      if(Array.isArray(notifications))state.notifications=notifications;
+    }catch(error){console.warn('Dados locais inválidos; a base vazia foi preservada.',error);}
+  }
+
+  async function persistActivity(activity){
+    activity.updatedAt=nowIso();
+    activity.version=Number(activity.version||0)+1;
+    const index=state.activities.findIndex(item=>item.id===activity.id);
+    if(index>=0)state.activities[index]=normalizeActivity(activity);else state.activities.unshift(normalizeActivity(activity));
+    saveLocal();
+    if(database){
+      try{await database.ref(`${DB_ROOT}/${DB_COLLECTION}/${activity.id}`).set(activity);}
+      catch(error){console.warn('Falha ao gravar atividade no Firebase; registro local preservado.',error);}
+    }
+  }
+
+
+  function normalizeDirectoryProfile(profile){
+    if(['routePlanner','coordinator'].includes(profile))return 'supervisor';
+    if(['analyst','supervisor','technician','dashboard'].includes(profile))return profile;
+    return '';
+  }
+
+  function normalizedDirectoryUsers(){
+    return (state.directoryUsers||[]).map(user=>({
+      ...user,
+      id:user.id||user.uid||'',
+      name:user.name||user.displayName||user.nome||user.email||'Usuário sem nome',
+      profile:normalizeDirectoryProfile(user.profile||user.role||''),
+      area:user.area||user.primaryArea||'',
+      management:user.management||areaDetails(user.area||user.primaryArea||'Backbone').management,
+      city:user.city||user.baseCity||user.municipio||'',
+      active:user.active!==false&&user.status!=='Inativo'&&user.status!=='Reprovado'
+    })).filter(user=>user.id&&user.profile&&user.active);
+  }
+
+  function allTechnicians(){
+    const map=new Map(referenceData.technicians.map(item=>[item.id,{...item}]));
+    normalizedDirectoryUsers().filter(user=>user.profile==='technician').forEach(user=>{
+      map.set(user.id,{
+        id:user.id,name:user.name,email:user.email||'',city:user.city,state:user.state||'SP',
+        availability:user.availability||'Disponível',area:user.area,management:user.management,active:true
+      });
+    });
+    return Array.from(map.values());
+  }
+
+  function attachFirebase(){
+    if(!database||state.firebaseListenersAttached)return;
+    state.firebaseListenersAttached=true;
+    database.ref(`${DB_ROOT}/${DB_COLLECTION}`).on('value',snapshot=>{
+      const value=snapshot.val();
+      if(!value)return;
+      state.activities=Object.values(value).map(normalizeActivity);
+      saveLocal();render();
+    },error=>console.warn('Leitura remota das atividades indisponível.',error));
+    database.ref(`${DB_ROOT}/users`).on('value',snapshot=>{
+      const value=snapshot.val()||{};
+      state.directoryUsers=Object.entries(value).map(([id,user])=>({id,...(user||{})}));
+      render();
+    },error=>console.warn('Leitura do diretório de usuários indisponível.',error));
+  }
+
+  function activityById(id){return state.activities.find(item=>item.id===id)||null;}
+  function executionFor(activity,technicianId){return activity.technicianExecutions?.[technicianId]||null;}
+  function currentTechnicianId(){return actor().id;}
+  function technicianAssigned(activity,technicianId=currentTechnicianId()){return activity.assignedTechnicians.some(item=>item.technicianId===technicianId);}
+  function isResponsible(activity,technicianId=currentTechnicianId()){return activity.responsibleTechnicianId===technicianId;}
+  function accessibleActivities(){
+    const a=actor();
+    if(a.profile==='technician')return state.activities.filter(item=>technicianAssigned(item,a.id));
+    const areas=a.allowedAreas||[];
+    return state.activities.filter(item=>areas.includes(item.area));
+  }
+  function filteredActivities(list=accessibleActivities()){
+    const q=normalizeText(state.filters.search);
+    return list.filter(item=>{
+      if(state.filters.area&&item.area!==state.filters.area)return false;
+      if(state.filters.status&&item.currentStatus!==state.filters.status)return false;
+      if(state.filters.date&&item.scheduledDate!==state.filters.date)return false;
+      if(q&&!normalizeText([activityDisplayId(item),item.activityType,item.destinationLocationName,item.analystName,item.supervisorName].join(' ')).includes(q))return false;
+      return true;
+    });
+  }
+
+  function appendHistory(activity,eventType,previousStatus,newStatus,comment='',technicianId='',technicianName=''){
+    const a=actor();
+    activity.history=activity.history||[];
+    activity.history.push({
+      eventType,technicianId,technicianName,area:activity.area,management:activity.management,
+      previousStatus,newStatus,userId:a.id,userName:a.name,userProfile:a.profile,
+      timestamp:nowIso(),comment,version:Number(activity.version||1)
+    });
+  }
+
+  function addNotification(profile,title,message,activityId){
+    state.notifications.unshift({id:uid('notif'),profile,title,message,activityId,createdAt:nowIso(),read:false});
+    saveLocal();
+  }
+
+  function recalculateActivity(activity,appendEvent=true){
+    const executions=activity.assignedTechnicians.map(member=>executionFor(activity,member.technicianId)).filter(Boolean);
+    activity.totalEstimatedKm=sum(activity.assignedTechnicians,item=>item.estimatedKm);
+    activity.totalActualKm=sum(executions,item=>item.totalActualKm);
+    activity.totalInvoiceAmount=sum(executions,item=>item.invoiceAmount);
+    if(!executions.length){
+      activity.currentStatus='backlog';
+      return activity.currentStatus;
+    }
+    if(['validated_compliant','validated_non_compliant','cancelled'].includes(activity.currentStatus))return activity.currentStatus;
+    const statuses=executions.map(item=>item.participantStatus);
+    let next='assigned';
+    if(statuses.some(status=>status==='returned_for_adjustment'))next='returned_for_adjustment';
+    else if(statuses.every(status=>status==='completed'))next='awaiting_supervisor_validation';
+    else if(statuses.some(status=>status==='completed'))next='partially_completed';
+    else if(statuses.some(status=>['in_execution','continued_next_day'].includes(status)))next='in_execution';
+    else next='assigned';
+    const previous=activity.currentStatus;
+    activity.currentStatus=next;
+    activity.currentStage=next;
+    if(appendEvent&&previous!==next)appendHistory(activity,'global_status_recalculated',previous,next,'Status geral recalculado conforme as execuções individuais.');
+    return next;
+  }
+
+  const ATTACHMENT_DB_NAME='gestaoAtividadesAttachments';
+  const ATTACHMENT_STORE='files';
+  function openAttachmentDb(){
+    return new Promise((resolve,reject)=>{
+      const request=indexedDB.open(ATTACHMENT_DB_NAME,1);
+      request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(ATTACHMENT_STORE))db.createObjectStore(ATTACHMENT_STORE);};
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error);
+    });
+  }
+  async function saveAttachmentBlob(key,file){
+    const db=await openAttachmentDb();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(ATTACHMENT_STORE,'readwrite');
+      tx.objectStore(ATTACHMENT_STORE).put(file,key);
+      tx.oncomplete=()=>{db.close();resolve();};
+      tx.onerror=()=>{db.close();reject(tx.error);};
+    });
+  }
+  async function getAttachmentBlob(key){
+    const db=await openAttachmentDb();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(ATTACHMENT_STORE,'readonly');
+      const request=tx.objectStore(ATTACHMENT_STORE).get(key);
+      request.onsuccess=()=>{db.close();resolve(request.result||null);};
+      request.onerror=()=>{db.close();reject(request.error);};
+    });
+  }
+  async function processFiles(fileList,activityId,kind){
+    const files=Array.from(fileList||[]);
+    const result=[];
+    for(const file of files){
+      const id=uid('file'),storagePath=`${activityId}/${kind}/${id}-${file.name}`;
+      try{await saveAttachmentBlob(storagePath,file);}catch(error){console.warn('Falha no armazenamento local do anexo.',error);}
+      result.push({id,name:file.name,mimeType:file.type||'application/octet-stream',size:file.size,storagePath,uploadedBy:actor().id,uploadedByName:actor().name,uploadedAt:nowIso()});
+    }
+    return result;
+  }
+  async function downloadAttachment(activityId,technicianId,kind,index){
+    const activity=activityById(activityId);if(!activity)return;
+    let list=[];
+    if(kind==='programmingAttachments')list=activity.programmingAttachments||[];
+    else{
+      const execution=executionFor(activity,technicianId);
+      list=execution?.[kind]||[];
+    }
+    const item=list[Number(index)];if(!item)return;
+    if(item.downloadUrl){window.open(item.downloadUrl,'_blank','noopener');return;}
+    try{
+      const blob=await getAttachmentBlob(item.storagePath);
+      if(!blob)return showToast('error','Arquivo indisponível','O arquivo não está neste navegador.');
+      const url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download=item.name||'arquivo';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+    }catch(error){showToast('error','Falha no download',error.message);}
+  }
+
+  function statusBadge(status){
+    const cfg=STATUS_CONFIG[status]||{label:status,badge:'badge-gray'};
+    return `<span class="badge ${cfg.badge}">${escapeHtml(cfg.label)}</span>`;
+  }
+  function participantBadge(status){
+    const cls=status==='completed'?'badge-success':status==='returned_for_adjustment'?'badge-danger':status==='continued_next_day'?'badge-warning':status==='in_execution'?'badge-vivo':'badge-info';
+    return `<span class="badge ${cls}">${escapeHtml(PARTICIPANT_STATUS[status]||status)}</span>`;
+  }
+  function progressInfo(activity){
+    const total=activity.assignedTechnicians.length;
+    const completed=activity.assignedTechnicians.filter(member=>executionFor(activity,member.technicianId)?.participantStatus==='completed').length;
+    return {total,completed,pct:total?Math.round(completed/total*100):0};
+  }
+
+  function showToast(type,title,message){
+    state.toast={type,title,message};render();
+    setTimeout(()=>{if(state.toast?.title===title){state.toast=null;render();}},3500);
+  }
+  function openModal(content){state.modal=content;render();setTimeout(()=>document.querySelector('.modal-box input:not([type=hidden]),.modal-box select,.modal-box textarea')?.focus(),20);}
+  function closeModal(){state.modal=null;render();}
+  function openDrawer(id){state.drawer=id;render();}
+  function closeDrawer(){state.drawer=null;render();}
+
+  function kpi(label,value,iconName='barChart',tone='#660099'){
+    return `<div class="card kpi-card"><div class="kpi-icon" style="background:${tone}18;color:${tone}">${I[iconName]||I.barChart}</div><div><div class="kpi-value">${escapeHtml(value)}</div><div class="kpi-label">${escapeHtml(label)}</div></div></div>`;
+  }
+  function pageHeader(title,subtitle,actions=''){
+    return `<div class="page-header"><div><h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p></div>${actions?`<div class="page-actions">${actions}</div>`:''}</div>`;
+  }
+  function emptyState(title,message,iconName='fileText'){
+    return `<div class="card empty-state">${I[iconName]||I.fileText}<h3>${escapeHtml(title)}</h3><p>${escapeHtml(message)}</p></div>`;
+  }
+  function table(headers,rows){
+    return `<div class="table-wrap"><table class="data-table"><thead><tr>${headers.map(item=>`<th>${escapeHtml(item)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="${headers.length}"><div class="empty-state" style="min-height:110px">Nenhum registro encontrado.</div></td></tr>`}</tbody></table></div>`;
+  }
+  function field(label,name,type='text',options={}){
+    const required=options.required?'<b>*</b>':'';
+    const value=options.value??'';
+    if(type==='select'){
+      return `<label class="form-field"><span>${escapeHtml(label)} ${required}</span><select class="form-input" name="${name}" ${options.required?'required':''} ${options.disabled?'disabled':''}>${(options.items||[]).map(item=>{
+        const val=typeof item==='object'?item.value:item,labelText=typeof item==='object'?item.label:item;
+        return `<option value="${escapeHtml(val)}" ${String(val)===String(value)?'selected':''}>${escapeHtml(labelText)}</option>`;
+      }).join('')}</select>${options.help?`<small class="field-help">${escapeHtml(options.help)}</small>`:''}</label>`;
+    }
+    if(type==='textarea'){
+      return `<label class="form-field"><span>${escapeHtml(label)} ${required}</span><textarea class="form-input" name="${name}" rows="${options.rows||3}" ${options.required?'required':''}>${escapeHtml(value)}</textarea>${options.help?`<small class="field-help">${escapeHtml(options.help)}</small>`:''}</label>`;
+    }
+    if(type==='file'){
+      return `<label class="form-field"><span>${escapeHtml(label)} ${required}</span><input class="form-input" type="file" name="${name}" ${options.multiple?'multiple':''} accept="${options.accept||'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}" ${options.required?'required':''}>${options.help?`<small class="field-help">${escapeHtml(options.help)}</small>`:''}</label>`;
+    }
+    return `<label class="form-field"><span>${escapeHtml(label)} ${required}</span><input class="form-input ${options.readonly?'readonly-field':''}" type="${type}" name="${name}" value="${escapeHtml(value)}" placeholder="${escapeHtml(options.placeholder||'')}" ${options.list?`list="${options.list}"`:''} ${options.required?'required':''} ${options.readonly?'readonly':''} ${options.min!==undefined?`min="${options.min}"`:''} ${options.step?`step="${options.step}"`:''}>${options.help?`<small class="field-help">${escapeHtml(options.help)}</small>`:''}</label>`;
+  }
+
+  function renderSidebar(){
+    const items=menuItems[state.profile]||[];
+    return `<aside class="sidebar ${state.sidebarCollapsed?'collapsed':''}">
+      <div class="sidebar-logo"><div class="brand-mark">GA</div><div class="brand-copy"><div class="brand-title">Gestão de Atividades</div><div class="brand-subtitle">Controle de Backlog, IDs e Técnicos</div></div></div>
+      <nav class="sidebar-nav">${items.map(([page,label,iconName])=>`<button class="sidebar-item ${state.activePage===page?'active':''}" data-action="navigate" data-page="${page}"><span class="sidebar-icon-wrap">${I[iconName]||I.fileText}</span><span class="sidebar-item-label">${escapeHtml(label)}</span></button>`).join('')}</nav>
+      <div class="sidebar-footer"><button class="collapse-button" data-action="toggle-sidebar"><span>${state.sidebarCollapsed?I.right:I.left}</span><span class="collapse-label">${state.sidebarCollapsed?'Expandir':'Recolher menu'}</span></button></div>
+    </aside>`;
+  }
+
+  function renderHeader(){
+    const a=actor();
+    const unread=state.notifications.filter(item=>!item.read&&(item.profile===state.profile||item.profile==='all')).length;
+    return `<header class="header">
+      <div class="header-title-wrap"><div class="header-breadcrumb">Gestão de Atividades / <span>${escapeHtml(PAGE_TITLES[state.activePage]||'Início')}</span></div><div class="header-title">${escapeHtml(PAGE_TITLES[state.activePage]||'Início')}</div></div>
+      <div class="header-dropdown-wrap">
+        <button class="notif-button" data-action="toggle-notifications">${I.bell}${unread?`<span class="notification-count">${unread}</span>`:''}</button>
+        ${state.notificationPanelOpen?renderNotifications():''}
+      </div>
+      <div class="header-dropdown-wrap">
+        <button class="profile-switch-button" data-action="toggle-profile"><span class="profile-icon">TESTE</span><span class="profile-label">${escapeHtml(profileLabels[state.profile])}${state.profile!=='dashboard'?` · ${escapeHtml(a.area||'')}`:''}</span>${I.down}</button>
+        ${state.profilePanelOpen?renderProfilePanel():''}
+      </div>
+      <button class="user-button" data-action="user-info"><div class="avatar">${escapeHtml(a.name.split(' ').slice(0,2).map(item=>item[0]).join('').toUpperCase())}</div><div class="user-copy responsive-hide"><div class="user-name">${escapeHtml(a.name)}</div><div class="user-role-short">${escapeHtml(profileLabels[a.profile]||a.profile)}${a.profile!=='dashboard'&&a.area?` · ${escapeHtml(a.area)}`:''}</div></div></button>
+    </header>`;
+  }
+
+  function renderNotifications(){
+    const items=state.notifications.filter(item=>item.profile===state.profile||item.profile==='all').slice(0,8);
+    return `<div class="dropdown-panel notification-panel"><div class="notification-head"><strong>Notificações</strong><button class="link-button" data-action="mark-notifications-read">Marcar como lidas</button></div><div class="notification-scroll">${items.length?items.map(item=>`<button class="notification-item ${item.read?'':'unread'}" data-action="open-notification" data-id="${item.activityId||''}"><span class="notification-icon" style="background:#F3E8FF;color:#660099">${I.bell}</span><span style="flex:1;text-align:left"><strong>${escapeHtml(item.title)}</strong><span class="notification-message">${escapeHtml(item.message)}</span><small>${formatDateTime(item.createdAt)}</small></span>${item.read?'':'<span class="notification-dot"></span>'}</button>`).join(''):'<div class="empty-state" style="min-height:130px">Nenhuma notificação.</div>'}</div></div>`;
+  }
+
+  function renderProfilePanel(){
+    return `<div class="dropdown-panel profile-panel">
+      <div class="profile-panel-title">Perfis de teste</div>
+      ${testUsers.map(user=>{
+        const areaCopy=user.profile==='dashboard'?'Todas as Áreas':`${user.area}${user.city?` · ${user.city}`:''}`;
+        return `<button class="profile-option ${state.testUserId===user.id?'active':''}" data-action="switch-test-user" data-user-id="${escapeHtml(user.id)}">
+          <strong style="display:block">${escapeHtml(user.name)}</strong>
+          <small style="display:block;color:#6C757D;margin-top:2px">${escapeHtml(profileLabels[user.profile]||user.profile)} · ${escapeHtml(areaCopy)}</small>
+        </button>`;
+      }).join('')}
+      <div class="demo-warning">Base operacional zerada. Estes seis usuários existem somente para testar permissões, equipes e fluxos.</div>
+    </div>`;
+  }
+
+  function renderToast(){
+    if(!state.toast)return '';
+    const map={success:'toast-success',error:'toast-error',warning:'toast-warning',info:'toast-info'};
+    return `<div class="toast-host"><div class="toast ${map[state.toast.type]||'toast-info'}"><span>${state.toast.type==='success'?I.checkCircle:state.toast.type==='error'?I.xCircle:I.info}</span><div><strong>${escapeHtml(state.toast.title)}</strong><p>${escapeHtml(state.toast.message)}</p></div><button class="icon-button" data-action="close-toast">${I.x}</button></div></div>`;
+  }
+
+  function render(){
+    const app=document.getElementById('app');if(!app)return;
+    app.innerHTML=`<div class="app-shell">${renderSidebar()}<div class="main-shell">${renderHeader()}<main class="main-content"><div class="content-inner">${renderPage()}</div></main></div><div class="profile-strip ${state.sidebarCollapsed?'collapsed':''}" style="background:${profileColor[state.profile]}"></div>${state.modal?`<div class="modal-overlay"><div class="modal-box ${state.modal.wide?'modal-wide':''}">${state.modal.html}</div></div>`:''}${state.drawer?renderDrawer(state.drawer):''}${renderToast()}</div>`;
+  }
+
+  function renderPage(){
+    const allowed=(menuItems[state.profile]||[]).some(item=>item[0]===state.activePage);
+    if(!allowed){state.activePage=(menuItems[state.profile]||[])[0]?.[0]||'home';saveLocal();}
+    const map={
+      home:renderHome,create:renderCreate,backlog:renderBacklog,registrations:renderRegistrations,
+      programming:renderProgramming,execution:renderExecution,validations:renderValidations,
+      activities:renderActivityManagement,teams:renderAreaTeams,technicians:renderTechnicianManagement,
+      myActivities:renderMyActivities,currentActivity:renderCurrentActivity,
+      technicianSchedule:renderTechnicianSchedule,history:renderHistory,
+      dashboard:renderDashboard,reports:renderReports
+    };
+    return (map[state.activePage]||renderHome)();
+  }
+
+  function renderHome(){
+    if(state.profile==='analyst')return renderAnalystHome();
+    if(state.profile==='supervisor')return renderSupervisorHome();
+    if(state.profile==='technician')return renderTechnicianHome();
+    return renderDashboard();
+  }
+
+  function renderAnalystHome(){
+    const list=accessibleActivities(),mine=list.filter(item=>item.analystId===actor().id||!state.currentUser);
+    const backlog=mine.filter(item=>item.currentStatus==='backlog');
+    return `<div class="view-stack">${pageHeader('Início do Analista','Cadastre os IDs recebidos diariamente e acompanhe a evolução do Backlog.',`<button class="btn-primary" data-action="navigate" data-page="create">${I.plus} Cadastrar ID</button>`)}
+      <div class="kpi-grid">${kpi('IDs cadastrados',mine.length,'fileText')}${kpi('No Backlog',backlog.length,'clock','#FD7E14')}${kpi('Programados',mine.filter(item=>item.currentStatus!=='backlog'&&item.currentStatus!=='cancelled').length,'calendar','#0D6EFD')}${kpi('Conformes',mine.filter(item=>item.currentStatus==='validated_compliant').length,'checkCircle','#198754')}</div>
+      <section class="card section-card"><div class="section-heading"><h3 style="margin:0">Últimos IDs cadastrados</h3><button class="link-button" data-action="navigate" data-page="registrations">Ver todos</button></div>${activityTable(mine.slice(0,6),{analystActions:true})}</section>
+    </div>`;
+  }
+
+  function renderSupervisorHome(){
+    const list=accessibleActivities();
+    return `<div class="view-stack">${pageHeader('Início do Supervisor','Analise o Backlog, programe equipes e valide as execuções.')}
+      <div class="kpi-grid">${kpi('Backlog',list.filter(item=>['backlog','returned_to_analyst'].includes(item.currentStatus)).length,'clock','#FD7E14')}${kpi('Em execução',list.filter(item=>['assigned','in_execution','partially_completed'].includes(item.currentStatus)).length,'activity','#660099')}${kpi('Aguardando validação',list.filter(item=>item.currentStatus==='awaiting_supervisor_validation').length,'checkCircle','#0D6EFD')}${kpi('Não conformes',list.filter(item=>item.currentStatus==='validated_non_compliant').length,'alert','#DC3545')}</div>
+      <section class="card section-card"><div class="section-heading"><h3 style="margin:0">Prioridades do Backlog</h3><button class="link-button" data-action="navigate" data-page="backlog">Abrir Backlog</button></div>${activityTable(list.filter(item=>item.currentStatus==='backlog').slice(0,6),{supervisorActions:true})}</section>
+      <section class="card section-card"><div class="section-heading"><h3 style="margin:0">Aguardando validação</h3><button class="link-button" data-action="navigate" data-page="validations">Ver fila</button></div>${activityTable(list.filter(item=>item.currentStatus==='awaiting_supervisor_validation').slice(0,6),{validationActions:true})}</section>
+    </div>`;
+  }
+
+  function renderTechnicianHome(){
+    const list=accessibleActivities();
+    const pending=list.filter(item=>executionFor(item,actor().id)?.participantStatus!=='completed');
+    const completed=list.filter(item=>executionFor(item,actor().id)?.participantStatus==='completed');
+    const km=sum(list,item=>executionFor(item,actor().id)?.totalActualKm);
+    return `<div class="view-stack">${pageHeader('Início do Técnico','Acompanhe suas atividades, registros diários e pendências.')}
+      <div class="kpi-grid">${kpi('Atividades recebidas',list.length,'map')}${kpi('Pendentes',pending.length,'clock','#FD7E14')}${kpi('Concluídas',completed.length,'checkCircle','#198754')}${kpi('KM realizado',`${number(km,1)} km`,'navigation','#0D6EFD')}</div>
+      <section class="card section-card"><div class="section-heading"><h3 style="margin:0">Próximas atividades</h3><button class="link-button" data-action="navigate" data-page="myActivities">Ver todas</button></div>${technicianActivityTable(pending.slice(0,6))}</section>
+    </div>`;
+  }
+
+  function renderCreate(){
+    const a=actor(),areas=a.allowedAreas||Object.keys(AREA_CONFIG);
+    return `<div class="view-stack">${pageHeader('Cadastrar ID','Registro inicial realizado pelo Analista. O ID será enviado diretamente ao Backlog.')}
+      <form id="create-activity-form" class="card form-card">
+        <div class="form-section-title">Identificação</div>
+        <div class="form-grid">
+          ${field('Tipo do ID','idType','select',{items:['TA','BD','ATP','OSX','Outros'],value:'TA',required:true})}
+          ${field('Tipo personalizado','idCustomType','text',{placeholder:'Obrigatório para Outros'})}
+          ${field('Número do ID','idNumber','text',{required:true,placeholder:'Digite o número real do ID'})}
+          ${field('Área','area','select',{items:areas,value:a.area||areas[0],required:true})}
+          ${field('Gerência','management','text',{value:areaDetails(a.area||areas[0]).management,readonly:true})}
+          ${field('Gerente','managerName','text',{value:areaDetails(a.area||areas[0]).managerName,readonly:true})}
+        </div>
+        <div class="form-section-title">Atividade</div>
+        <div class="form-grid">
+          ${field('Data de entrada','entryDate','date',{value:isoDate(today),required:true})}
+          ${field('Atividade','activityType','select',{items:referenceData.activities,value:'Inspeção',required:true})}
+          ${field('Localidade de destino','destinationLocationName','text',{required:true,placeholder:'Município onde a atividade será realizada',list:'sp-locations'})}
+        </div>
+        ${locationDatalist()}
+        <div class="form-grid form-grid-2">
+          ${field('Descrição inicial','activityDescription','textarea',{rows:4,required:true})}
+          ${field('Observações','initialNotes','textarea',{rows:4})}
+        </div>
+        <div class="form-actions"><button type="reset" class="btn-outline">Limpar</button><button type="submit" class="btn-primary">${I.plus} Cadastrar no Backlog</button></div>
+      </form>
+    </div>`;
+  }
+
+  function locationDatalist(){
+    return `<datalist id="sp-locations">${referenceData.locations.filter(item=>item.active!==false).map(item=>`<option value="${escapeHtml(item.name)}"></option>`).join('')}</datalist>`;
+  }
+
+  function renderBacklog(){
+    const list=filteredActivities(accessibleActivities().filter(item=>['backlog','returned_to_analyst'].includes(item.currentStatus)));
+    return `<div class="view-stack">${pageHeader('Backlog de IDs','IDs cadastrados e ainda não programados/atribuídos.',state.profile==='analyst'?`<button class="btn-primary" data-action="navigate" data-page="create">${I.plus} Cadastrar ID</button>`:'')}
+      ${renderFilters()}
+      <div class="kpi-grid">${kpi('Total no Backlog',list.length,'fileText','#FD7E14')}${kpi('Entradas hoje',list.filter(item=>String(item.createdAt).slice(0,10)===isoDate(today)).length,'plus')}${kpi('Backbone',list.filter(item=>item.area==='Backbone').length,'map')}${kpi('B2B',list.filter(item=>item.area==='B2B').length,'activity')}</div>
+      <section class="card section-card">${activityTable(list,{supervisorActions:state.profile==='supervisor',analystActions:state.profile==='analyst'})}</section>
+    </div>`;
+  }
+
+  function renderRegistrations(){
+    const list=filteredActivities(accessibleActivities().filter(item=>item.analystId===actor().id||!state.currentUser));
+    return `<div class="view-stack">${pageHeader('Meus Cadastros','Acompanhe o andamento dos IDs cadastrados pelo Analista.')}${renderFilters()}<section class="card section-card">${activityTable(list,{analystActions:true})}</section></div>`;
+  }
+
+  function renderProgramming(){
+    const dates=[isoDate(today),addDays(1)];
+    const list=filteredActivities(accessibleActivities().filter(item=>dates.includes(item.scheduledDate)&&item.currentStatus!=='backlog'&&item.currentStatus!=='cancelled'));
+    return `<div class="view-stack">${pageHeader('Programação Dia e D+1','Atividades programadas e atribuídas para hoje e amanhã.')}${renderFilters()}
+      <div class="kpi-grid">${kpi('Hoje',list.filter(item=>item.scheduledDate===isoDate(today)).length,'calendar')}${kpi('D+1',list.filter(item=>item.scheduledDate===addDays(1)).length,'calendar','#0D6EFD')}${kpi('Técnicos envolvidos',new Set(list.flatMap(item=>item.assignedTechnicians.map(member=>member.technicianId))).size,'users')}${kpi('KM estimado',`${number(sum(list,item=>item.totalEstimatedKm),1)} km`,'navigation')}</div>
+      <section class="card section-card">${activityTable(list,{supervisorActions:state.profile==='supervisor'})}</section>
+    </div>`;
+  }
+
+  function renderExecution(){
+    const list=filteredActivities(accessibleActivities().filter(item=>['assigned','in_execution','partially_completed','returned_for_adjustment'].includes(item.currentStatus)));
+    return `<div class="view-stack">${pageHeader('Atividades em Execução','Acompanhe o andamento individual de cada integrante da equipe.')}${renderFilters()}<section class="card section-card">${activityTable(list,{supervisorActions:true,showProgress:true})}</section></div>`;
+  }
+
+  function renderValidations(){
+    const list=filteredActivities(accessibleActivities().filter(item=>item.currentStatus==='awaiting_supervisor_validation'));
+    return `<div class="view-stack">${pageHeader('Aguardando Validação','Somente atividades concluídas por todos os integrantes aparecem nesta fila.')}${renderFilters()}<section class="card section-card">${activityTable(list,{validationActions:true,showProgress:true})}</section></div>`;
+  }
+
+  function renderActivityManagement(){
+    const list=filteredActivities(accessibleActivities());
+    return `<div class="view-stack">${pageHeader('Gestão de IDs','Análise consolidada do Backlog, execução, KM, cabo, custos e validações.',`<button class="btn-outline" data-action="export-csv">${I.download} Exportar CSV</button>`)}
+      ${renderFilters()}
+      <div class="kpi-grid">${kpi('Total de IDs',list.length,'fileText')}${kpi('KM estimado',`${number(sum(list,item=>item.totalEstimatedKm),1)} km`,'navigation')}${kpi('KM realizado',`${number(sum(list,item=>item.totalActualKm),1)} km`,'activity')}${kpi('Custo total',money(sum(list,item=>item.totalInvoiceAmount)),'barChart')}</div>
+      <section class="card section-card">${managementTable(list)}</section>
+    </div>`;
+  }
+
+
+  function teamAreasForActor(){
+    const areas=actor().profile==='dashboard'?Object.keys(AREA_CONFIG):allowedAreas();
+    return areas.filter(area=>AREA_CONFIG[area]);
+  }
+
+  function staffForArea(kind,area){
+    const role=kind==='analysts'?'analyst':'supervisor';
+    const map=new Map((referenceData[kind]||[]).filter(item=>item.active!==false&&item.area===area).map(item=>[item.id,item]));
+    normalizedDirectoryUsers().filter(item=>item.profile===role&&item.area===area).forEach(item=>map.set(item.id,item));
+    return Array.from(map.values()).sort((a,b)=>a.name.localeCompare(b.name));
+  }
+
+  function technicianOpenActivities(technicianId){
+    const terminal=['validated_compliant','validated_non_compliant','cancelled'];
+    return state.activities.filter(activity=>{
+      if(terminal.includes(activity.currentStatus))return false;
+      const execution=executionFor(activity,technicianId);
+      return technicianAssigned(activity,technicianId)&&execution&&execution.participantStatus!=='completed';
+    });
+  }
+
+  function technicianTeamStatus(technician){
+    const activities=technicianOpenActivities(technician.id);
+    return {
+      available:activities.length===0,
+      activities,
+      label:activities.length?'Em atividade':'Disponível'
+    };
+  }
+
+  function initials(name){
+    return String(name||'').split(/\s+/).filter(Boolean).slice(0,2).map(item=>item[0]).join('').toUpperCase()||'—';
+  }
+
+  function leadershipCards(area){
+    const groups=[['Analista','analysts'],['Supervisor','supervisors']];
+    return `<div class="area-leadership-grid">${groups.map(([label,key])=>{
+      const members=staffForArea(key,area);
+      if(!members.length)return `<article class="card team-empty-card"><strong>${label} da Área</strong>Nenhum cadastro disponível para ${escapeHtml(area)}.</article>`;
+      return members.map(member=>`<article class="card leadership-card"><div class="avatar">${escapeHtml(initials(member.name))}</div><div><h3>${escapeHtml(member.name)}</h3><p>${escapeHtml(member.email||'E-mail não informado')}</p><span class="leadership-role">${escapeHtml(label)} · ${escapeHtml(area)}</span></div></article>`).join('');
+    }).join('')}</div>`;
+  }
+
+  function technicianTeamCards(area){
+    const technicians=allTechnicians().filter(item=>item.active!==false&&item.area===area).map(technician=>({technician,status:technicianTeamStatus(technician)}));
+    technicians.sort((a,b)=>Number(a.status.available)-Number(b.status.available)||String(a.technician.city).localeCompare(String(b.technician.city))||a.technician.name.localeCompare(b.technician.name));
+    if(!technicians.length)return `<article class="card team-empty-card"><strong>Nenhum Técnico cadastrado</strong>A equipe técnica de ${escapeHtml(area)} deverá ser carregada no cadastro de usuários dessa Área.</article>`;
+    return `<div class="team-grid">${technicians.map(({technician,status})=>{
+      const first=status.activities[0];
+      const activityCopy=status.activities.length?`${status.activities.length} atividade(s) ativa(s)${first?` · ${activityDisplayId(first)} em ${first.destinationLocationName||'destino não informado'}`:''}`:'Sem atividade pendente no momento';
+      return `<article class="card team-card"><div class="avatar">${escapeHtml(initials(technician.name))}</div><div><h3>${escapeHtml(technician.name)}</h3><p>${escapeHtml(technician.city||'Lotação não informada')} · ${escapeHtml(area)}</p><div class="team-status-line"><span class="availability-dot ${status.available?'available':'busy'}"></span><span class="badge ${status.available?'badge-success':'badge-warning'}">${escapeHtml(status.label)}</span></div><div class="team-activity-copy">${escapeHtml(activityCopy)}</div></div><div class="team-stat"><strong>${status.activities.length}</strong><span>atividades ativas</span></div></article>`;
+    }).join('')}</div>`;
+  }
+
+  function renderAreaTeams(){
+    const areas=teamAreasForActor();
+    if(!areas.includes(state.teamArea))state.teamArea=actor().area&&areas.includes(actor().area)?actor().area:(areas[0]||'Backbone');
+    const area=state.teamArea,cfg=areaDetails(area);
+    const technicians=allTechnicians().filter(item=>item.active!==false&&item.area===area);
+    const statuses=technicians.map(technician=>technicianTeamStatus(technician));
+    const active=statuses.filter(item=>!item.available).length,available=statuses.filter(item=>item.available).length;
+    return `<div class="view-stack">${pageHeader(state.profile==='dashboard'?'Equipes por Área':'Equipe da Área','Analistas, Supervisores e Técnicos são vinculados separadamente a cada Área.')}
+      <section class="card section-card"><div class="section-heading"><div><h3 style="margin:0">Selecionar Área</h3><div class="team-area-meta"><span>${escapeHtml(cfg.management)}</span><span>•</span><span>${escapeHtml(cfg.managerName)}</span></div></div></div><div class="area-tabs">${areas.map(item=>`<button class="area-tab ${item===area?'active':''}" data-action="select-team-area" data-area="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join('')}</div></section>
+      <div class="team-summary-grid">${kpi('Técnicos cadastrados',technicians.length,'users')}${kpi('Disponíveis',available,'checkCircle','#198754')}${kpi('Em atividade',active,'activity','#FD7E14')}${kpi('Atividades da Área',state.activities.filter(item=>item.area===area&&!['validated_compliant','validated_non_compliant','cancelled'].includes(item.currentStatus)).length,'map','#660099')}</div>
+      <section class="view-stack"><div class="section-heading"><h2 style="margin:0;font-size:18px">Liderança operacional</h2></div>${leadershipCards(area)}</section>
+      <section class="view-stack"><div class="section-heading"><h2 style="margin:0;font-size:18px">Técnicos da Área</h2><span class="badge badge-vivo">${technicians.length} cadastrados</span></div>${technicianTeamCards(area)}</section>
+    </div>`;
+  }
+
+  function renderTechnicianManagement(){
+    const rows=technicianMetrics();
+    return `<div class="view-stack">${pageHeader('Gestão de Técnicos','Produtividade, KM, despesas, participação em equipe e responsabilidade por ID.')}${renderFilters()}
+      <div class="kpi-grid">${kpi('Técnicos com atividade',rows.length,'users')}${kpi('Participações',sum(rows,item=>item.participations),'map')}${kpi('KM realizado',`${number(sum(rows,item=>item.actualKm),1)} km`,'navigation')}${kpi('Gasto total',money(sum(rows,item=>item.expense)),'barChart')}</div>
+      <section class="card section-card">${table(['Técnico','Lotação','Área','Participações','Como responsável','KM estimado','KM realizado','Gasto','Média por participação'],rows.map(item=>`<tr><td><strong>${escapeHtml(item.name)}</strong></td><td>${escapeHtml(item.city||'—')}</td><td>${escapeHtml(item.area||'—')}</td><td>${item.participations}</td><td>${item.responsible}</td><td>${number(item.estimatedKm,1)} km</td><td>${number(item.actualKm,1)} km</td><td>${money(item.expense)}</td><td>${money(item.participations?item.expense/item.participations:0)}</td></tr>`))}</section>
+    </div>`;
+  }
+
+  function technicianMetrics(){
+    const map=new Map();
+    filteredActivities(accessibleActivities()).forEach(activity=>{
+      activity.assignedTechnicians.forEach(member=>{
+        const execution=executionFor(activity,member.technicianId)||{};
+        if(!map.has(member.technicianId))map.set(member.technicianId,{id:member.technicianId,name:member.technicianName,city:member.baseCity,area:member.area,participations:0,responsible:0,estimatedKm:0,actualKm:0,expense:0});
+        const row=map.get(member.technicianId);
+        row.participations++;if(member.isResponsible)row.responsible++;
+        row.estimatedKm+=Number(member.estimatedKm||0);row.actualKm+=Number(execution.totalActualKm||0);row.expense+=Number(execution.invoiceAmount||0);
+      });
+    });
+    return Array.from(map.values()).sort((a,b)=>b.participations-a.participations||a.name.localeCompare(b.name));
+  }
+
+  function renderMyActivities(){
+    const list=filteredActivities(accessibleActivities());
+    return `<div class="view-stack">${pageHeader('Minhas Atividades','Todas as atividades em que você participa, com status individual.')}${renderFilters()}<section class="card section-card">${technicianActivityTable(list)}</section></div>`;
+  }
+
+  function renderCurrentActivity(){
+    const list=accessibleActivities().filter(item=>{
+      const status=executionFor(item,actor().id)?.participantStatus;
+      return ['accepted','in_execution','continued_next_day','returned_for_adjustment'].includes(status);
+    });
+    const activity=list[0];
+    return `<div class="view-stack">${pageHeader('Atividade Atual','Registre o andamento diário, KM, evidências e a conclusão da sua participação.')}${activity?renderTechnicianActivityCard(activity):emptyState('Nenhuma atividade ativa','Aceite uma atividade em Minhas Atividades para iniciar.','navigation')}</div>`;
+  }
+
+  function renderTechnicianSchedule(){
+    const list=accessibleActivities().filter(item=>item.currentStatus!=='cancelled').sort((a,b)=>String(a.scheduledDate).localeCompare(String(b.scheduledDate)));
+    return `<div class="view-stack">${pageHeader('Programação','Atividades organizadas pela data inicial programada.')}<section class="card section-card">${technicianActivityTable(list)}</section></div>`;
+  }
+
+  function renderHistory(){
+    const list=accessibleActivities().flatMap(activity=>(activity.history||[]).map(event=>({...event,activity}))).sort((a,b)=>String(b.timestamp).localeCompare(String(a.timestamp))).slice(0,100);
+    return `<div class="view-stack">${pageHeader('Histórico','Linha do tempo das alterações, execuções e validações.')}${list.length?`<section class="card section-card"><div class="timeline">${list.map(item=>`<div class="timeline-item"><div class="timeline-marker">${I.activity}</div><div><strong>${escapeHtml(eventLabel(item.eventType))} · ${escapeHtml(activityDisplayId(item.activity))}</strong><p>${escapeHtml(item.comment||'')}</p><small>${escapeHtml(item.userName||'Sistema')} · ${formatDateTime(item.timestamp)}${item.technicianName?` · Técnico: ${escapeHtml(item.technicianName)}`:''}</small></div></div>`).join('')}</div></section>`:emptyState('Histórico vazio','Nenhum evento registrado.')}</div>`;
+  }
+
+  function renderDashboard(){
+    const list=filteredActivities(accessibleActivities());
+    const backlog=list.filter(item=>['backlog','returned_to_analyst'].includes(item.currentStatus)).length;
+    const active=list.filter(item=>['assigned','in_execution','partially_completed','returned_for_adjustment'].includes(item.currentStatus)).length;
+    const compliant=list.filter(item=>item.currentStatus==='validated_compliant').length;
+    const nonCompliant=list.filter(item=>item.currentStatus==='validated_non_compliant').length;
+    return `<div class="view-stack">${pageHeader('Gestão de Atividades','Controle de Backlog, Gestão de IDs e Gestão de Técnicos.',`<button class="btn-outline" data-action="export-csv">${I.download} Exportar CSV</button>`)}
+      ${renderFilters()}
+      <div class="kpi-grid">${kpi('Backlog',backlog,'clock','#FD7E14')}${kpi('Em andamento',active,'activity')}${kpi('Conformes',compliant,'checkCircle','#198754')}${kpi('Não conformes',nonCompliant,'alert','#DC3545')}</div>
+      <div class="dashboard-chart-layout">
+        ${distributionCard('IDs por Área',Object.keys(AREA_CONFIG).map(area=>({label:area,value:list.filter(item=>item.area===area).length})))}
+        ${distributionCard('IDs por Status',Object.keys(STATUS_CONFIG).map(status=>({label:STATUS_CONFIG[status].label,value:list.filter(item=>item.currentStatus===status).length})).filter(item=>item.value))}
+      </div>
+      <section class="card section-card"><div class="section-heading"><h3 style="margin:0">Visão consolidada</h3></div>${managementTable(list.slice(0,20))}</section>
+    </div>`;
+  }
+
+  function renderReports(){
+    const list=filteredActivities(accessibleActivities());
+    const cable=sum(list,item=>item.cableMeters);
+    const avgDays=averageDurationDays(list);
+    return `<div class="view-stack">${pageHeader('Relatórios','Resumo gerencial para exportação e análise.',`<button class="btn-primary" data-action="export-csv">${I.download} Exportar CSV</button>`)}
+      ${renderFilters()}
+      <div class="summary-grid">
+        <div class="summary-card"><span>Total de IDs</span><strong>${list.length}</strong></div>
+        <div class="summary-card"><span>KM realizado</span><strong>${number(sum(list,item=>item.totalActualKm),1)} km</strong></div>
+        <div class="summary-card"><span>Cabo utilizado</span><strong>${number(cable,1)} m</strong></div>
+        <div class="summary-card"><span>Duração média</span><strong>${number(avgDays,1)} dias</strong></div>
+      </div>
+      <section class="card section-card">${managementTable(list)}</section>
+    </div>`;
+  }
+
+  function averageDurationDays(list){
+    const durations=list.filter(item=>item.scheduledDate).map(item=>{
+      const completed=Object.values(item.technicianExecutions||{}).map(execution=>execution.completedAt).filter(Boolean).sort().pop();
+      if(!completed)return 0;
+      return Math.max(1,Math.ceil((new Date(completed)-new Date(`${item.scheduledDate}T00:00:00`))/86400000)+1);
+    }).filter(Boolean);
+    return durations.length?sum(durations,item=>item)/durations.length:0;
+  }
+
+  function distributionCard(title,items){
+    const max=Math.max(1,...items.map(item=>item.value));
+    return `<section class="card chart-card"><h3>${escapeHtml(title)}</h3><div class="bar-chart">${items.map(item=>`<div class="bar-row"><span>${escapeHtml(item.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${item.value/max*100}%;background:#660099"></div></div><strong>${item.value}</strong></div>`).join('')}</div></section>`;
+  }
+
+  function renderFilters(){
+    return `<section class="card section-card"><div class="dashboard-filters">
+      <label class="compact-filter"><span>Pesquisar</span><input class="form-input" data-filter="search" value="${escapeHtml(state.filters.search)}" placeholder="ID, atividade, localidade ou responsável"></label>
+      <label class="compact-filter"><span>Área</span><select class="form-input" data-filter="area"><option value="">Todas</option>${(actor().profile==='dashboard'?Object.keys(AREA_CONFIG):allowedAreas()).map(area=>`<option value="${area}" ${state.filters.area===area?'selected':''}>${area}</option>`).join('')}</select></label>
+      <label class="compact-filter"><span>Status</span><select class="form-input" data-filter="status"><option value="">Todos</option>${Object.entries(STATUS_CONFIG).map(([key,cfg])=>`<option value="${key}" ${state.filters.status===key?'selected':''}>${escapeHtml(cfg.label)}</option>`).join('')}</select></label>
+      <label class="compact-filter"><span>Data programada</span><input class="form-input" type="date" data-filter="date" value="${escapeHtml(state.filters.date)}"></label>
+    </div></section>`;
+  }
+
+  function activityTable(list,options={}){
+    return table(['ID','Área','Entrada / Data','Atividade','Destino','Equipe','Status','Ações'],list.map(activity=>{
+      const progress=progressInfo(activity);
+      const team=activity.assignedTechnicians.length?`${progress.completed}/${progress.total} concluíram`:'Sem equipe';
+      const actions=[];
+      actions.push(`<button class="btn-outline btn-sm" data-action="open-activity" data-id="${activity.id}">${I.eye} Detalhes</button>`);
+      if(options.supervisorActions&&activity.currentStatus==='backlog')actions.push(`<button class="btn-primary btn-sm" data-action="open-program" data-id="${activity.id}">${I.users} Programar e atribuir</button>`);
+      if(options.supervisorActions&&activity.currentStatus==='backlog')actions.push(`<button class="btn-outline btn-sm" data-action="open-edit" data-id="${activity.id}">${I.edit} Editar</button>`);
+      if(options.supervisorActions&&['backlog','returned_to_analyst'].includes(activity.currentStatus))actions.push(`<button class="btn-warning btn-sm" data-action="open-backlog-decision" data-decision="return" data-id="${activity.id}">${I.left} Devolver</button>`);
+      if(options.supervisorActions&&['backlog','returned_to_analyst'].includes(activity.currentStatus))actions.push(`<button class="btn-danger btn-sm" data-action="open-backlog-decision" data-decision="cancel" data-id="${activity.id}">${I.xCircle} Cancelar</button>`);
+      if(options.analystActions&&activity.currentStatus==='returned_to_analyst')actions.push(`<button class="btn-primary btn-sm" data-action="open-edit" data-id="${activity.id}">${I.edit} Corrigir</button>`);
+      if(options.validationActions&&activity.currentStatus==='awaiting_supervisor_validation')actions.push(`<button class="btn-success btn-sm" data-action="open-validation" data-id="${activity.id}">${I.checkCircle} Validar</button>`);
+      return `<tr><td><button class="link-button route-number" data-action="open-activity" data-id="${activity.id}">${escapeHtml(activityDisplayId(activity))}</button></td><td><span class="area-chip">${escapeHtml(activity.area)}</span></td><td>${activity.scheduledDate?formatDate(activity.scheduledDate):formatDate(activity.createdAt)}<br><small>${activity.currentStatus==='backlog'?`${daysInBacklog(activity)} dias no Backlog`:escapeHtml(activity.management)}</small></td><td>${escapeHtml(activity.activityType)}<br><small>${escapeHtml(activity.activityDescription||'')}</small></td><td>${escapeHtml(activity.destinationLocationName||'—')}</td><td>${escapeHtml(team)}${options.showProgress&&progress.total?`<div class="team-progress" style="margin-top:5px"><span style="width:${progress.pct}%"></span></div>`:''}</td><td>${statusBadge(activity.currentStatus)}</td><td><div class="table-actions">${actions.join('')}</div></td></tr>`;
+    }));
+  }
+
+  function technicianActivityTable(list){
+    const techId=actor().id;
+    return table(['ID','Data','Atividade','Destino','Equipe','Seu status','Seu KM','Ações'],list.map(activity=>{
+      const execution=executionFor(activity,techId)||{};
+      const member=activity.assignedTechnicians.find(item=>item.technicianId===techId)||{};
+      const actions=[`<button class="btn-outline btn-sm" data-action="open-activity" data-id="${activity.id}">${I.eye} Detalhes</button>`];
+      if(execution.participantStatus==='assigned')actions.push(`<button class="btn-primary btn-sm" data-action="accept-activity" data-id="${activity.id}">${I.check} Aceitar</button>`);
+      if(['accepted','continued_next_day','returned_for_adjustment'].includes(execution.participantStatus))actions.push(`<button class="btn-primary btn-sm" data-action="start-activity" data-id="${activity.id}">${I.activity} ${execution.participantStatus==='continued_next_day'?'Retomar':'Iniciar'}</button>`);
+      if(execution.participantStatus==='in_execution')actions.push(`<button class="btn-success btn-sm" data-action="open-daily-log" data-id="${activity.id}">${I.checkCircle} Registrar o dia</button>`);
+      return `<tr><td><strong>${escapeHtml(activityDisplayId(activity))}</strong>${member.isResponsible?'<br><span class="responsible-chip">Responsável</span>':''}</td><td>${formatDate(activity.scheduledDate)}</td><td>${escapeHtml(activity.activityType)}</td><td>${escapeHtml(activity.destinationLocationName)}</td><td>${escapeHtml(activity.assignedTechnicians.map(item=>item.technicianName).join(', '))}</td><td>${participantBadge(execution.participantStatus||'assigned')}</td><td>${number(execution.totalActualKm,1)} / ${number(member.estimatedKm,1)} km</td><td><div class="table-actions">${actions.join('')}</div></td></tr>`;
+    }));
+  }
+
+  function managementTable(list){
+    return table(['ID','Área','Data','Destino','Equipe','KM estimado','KM realizado','Cabo','Custo','Validação'],list.map(activity=>{
+      const progress=progressInfo(activity);
+      return `<tr><td><button class="link-button" data-action="open-activity" data-id="${activity.id}">${escapeHtml(activityDisplayId(activity))}</button></td><td>${escapeHtml(activity.area)}<br><small>${escapeHtml(activity.management)}</small></td><td>${formatDate(activity.scheduledDate||activity.createdAt)}</td><td>${escapeHtml(activity.destinationLocationName)}</td><td>${progress.completed}/${progress.total||0}</td><td>${number(activity.totalEstimatedKm,1)} km</td><td>${number(activity.totalActualKm,1)} km</td><td>${activity.usedCable?`${number(activity.cableMeters,1)} m`:'Não'}</td><td>${money(activity.totalInvoiceAmount)}</td><td>${statusBadge(activity.currentStatus)}</td></tr>`;
+    }));
+  }
+
+  function daysInBacklog(activity){
+    const end=activity.backlogExitedAt?new Date(activity.backlogExitedAt):new Date();
+    return Math.max(0,Math.floor((end-new Date(activity.backlogEnteredAt||activity.createdAt))/86400000));
+  }
+
+  function renderTechnicianActivityCard(activity){
+    const execution=executionFor(activity,actor().id)||{};
+    const member=activity.assignedTechnicians.find(item=>item.technicianId===actor().id)||{};
+    const actions=[];
+    if(execution.participantStatus==='assigned')actions.push(`<button class="btn-primary" data-action="accept-activity" data-id="${activity.id}">${I.check} Aceitar atividade</button>`);
+    if(['accepted','continued_next_day','returned_for_adjustment'].includes(execution.participantStatus))actions.push(`<button class="btn-primary" data-action="start-activity" data-id="${activity.id}">${I.activity} ${execution.participantStatus==='continued_next_day'?'Retomar atividade':'Iniciar participação'}</button>`);
+    if(execution.participantStatus==='in_execution')actions.push(`<button class="btn-success" data-action="open-daily-log" data-id="${activity.id}">${I.checkCircle} Registrar o dia</button>`);
+    return `<section class="card active-route"><div class="active-route-head"><div><span class="eyebrow">${member.isResponsible?'Técnico responsável':'Integrante da equipe'}</span><h2>${escapeHtml(activityDisplayId(activity))} · ${escapeHtml(activity.activityType)}</h2></div>${participantBadge(execution.participantStatus)}</div>
+      <div class="detail-grid"><div><span>Área</span><strong>${escapeHtml(activity.area)}</strong></div><div><span>Data inicial</span><strong>${formatDate(activity.scheduledDate)}</strong></div><div><span>Destino</span><strong>${escapeHtml(activity.destinationLocationName)}</strong></div><div><span>Sua lotação</span><strong>${escapeHtml(member.baseCity||'—')}</strong></div><div><span>Seu KM estimado</span><strong>${number(member.estimatedKm,1)} km</strong></div><div><span>Seu KM realizado</span><strong>${number(execution.totalActualKm,1)} km</strong></div></div>
+      <div class="validation-banner"><strong>Equipe:</strong> ${escapeHtml(activity.assignedTechnicians.map(item=>`${item.technicianName}${item.isResponsible?' (responsável)':''}`).join(', '))}</div>
+      ${renderAttachmentList('Anexos da programação',activity.programmingAttachments,activity.id,'','programmingAttachments')}
+      ${renderDailyLogs(execution)}
+      <div class="form-actions">${actions.join('')}</div>
+    </section>`;
+  }
+
+  function renderDailyLogs(execution){
+    const logs=execution.dailyExecutionLogs||[];
+    if(!logs.length)return '<div class="attachment-empty">Nenhum registro diário realizado.</div>';
+    return `<div><div class="form-section-title">Registros diários</div><div class="daily-log-list">${logs.map(log=>`<div class="daily-log"><strong>${formatDate(log.date)}</strong><span>${number(log.actualKm,1)} km</span><span>${escapeHtml(log.notes||'—')}</span>${log.completedOnDate?'<span class="badge badge-success">Concluído no dia</span>':'<span class="badge badge-warning">Continuidade</span>'}</div>`).join('')}</div></div>`;
+  }
+
+  function renderAttachmentList(title,items,activityId,technicianId,kind){
+    const list=items||[];
+    return `<div><div class="form-section-title">${escapeHtml(title)}</div>${list.length?`<div class="attachment-list">${list.map((item,index)=>`<div class="attachment-item"><span>${I.fileText}</span><div><strong>${escapeHtml(item.name)}</strong><small>${formatFileSize(item.size)} · ${escapeHtml(item.uploadedByName||'—')} · ${formatDateTime(item.uploadedAt)}</small></div><button class="btn-outline btn-sm" data-action="download-attachment" data-id="${activityId}" data-technician="${technicianId}" data-kind="${kind}" data-index="${index}">${I.download} Baixar</button></div>`).join('')}</div>`:'<div class="attachment-empty">Nenhum arquivo disponível.</div>'}</div>`;
+  }
+  function formatFileSize(bytes){
+    const value=Number(bytes||0);if(!value)return '0 KB';if(value<1024)return `${value} B`;if(value<1048576)return `${(value/1024).toFixed(1)} KB`;return `${(value/1048576).toFixed(1)} MB`;
+  }
+
+  function renderDrawer(activityId){
+    const activity=activityById(activityId);if(!activity)return '';
+    const progress=progressInfo(activity);
+    return `<div class="drawer-overlay" data-action="close-drawer"></div><aside class="drawer-panel" role="dialog" aria-modal="true">
+      <div class="drawer-head"><div><span class="eyebrow">Gestão de Atividades</span><h2>${escapeHtml(activityDisplayId(activity))}</h2></div><button class="icon-button" data-action="close-drawer">${I.x}</button></div>
+      <div class="drawer-body">
+        <div class="drawer-status"><span class="area-chip">${escapeHtml(activity.area)}</span>${statusBadge(activity.currentStatus)}</div>
+        ${detailSection('Identificação',[['Tipo do ID',activity.idType],['Número',activity.idNumber],['Área',activity.area],['Gerência',activity.management],['Gerente',activity.managerName],['Analista',activity.analystName||'—']])}
+        ${detailSection('Atividade',[['Entrada',formatDate(activity.createdAt)],['Data inicial',formatDate(activity.scheduledDate)],['Atividade',activity.activityType],['Destino',activity.destinationLocationName],['Descrição',activity.activityDescription||'—'],['Supervisor',activity.supervisorName||'—']])}
+        <div class="drawer-section"><h3>Equipe e execução</h3><div class="team-progress"><span style="width:${progress.pct}%"></span></div><small style="display:block;margin-top:5px;color:#6C757D">${progress.completed} de ${progress.total} Técnicos concluíram</small>${renderParticipantDetails(activity)}</div>
+        ${renderAttachmentList('Anexos da programação',activity.programmingAttachments,activity.id,'','programmingAttachments')}
+        ${activity.assignedTechnicians.map(member=>{
+          const execution=executionFor(activity,member.technicianId);
+          return `<div class="drawer-section"><h3>Anexos de ${escapeHtml(member.technicianName)}</h3>${renderAttachmentList('Notas fiscais',execution.invoiceAttachments,activity.id,member.technicianId,'invoiceAttachments')}${renderAttachmentList('Evidências',execution.completionEvidenceAttachments,activity.id,member.technicianId,'completionEvidenceAttachments')}</div>`;
+        }).join('')}
+        ${detailSection('Consolidação',[['KM estimado',`${number(activity.totalEstimatedKm,1)} km`],['KM realizado',`${number(activity.totalActualKm,1)} km`],['Utilizou cabo',activity.usedCable?'Sim':'Não'],['Metragem',activity.usedCable?`${number(activity.cableMeters,1)} m`:'0 m'],['Custo total',money(activity.totalInvoiceAmount)],['Validação',STATUS_CONFIG[activity.currentStatus]?.label||activity.currentStatus]])}
+        <div class="drawer-section"><h3>Histórico</h3>${renderTimeline(activity.history||[])}</div>
+      </div>
+    </aside>`;
+  }
+
+  function detailSection(title,items){
+    return `<div class="drawer-section"><h3>${escapeHtml(title)}</h3><div class="drawer-grid">${items.map(([label,value])=>`<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value??'—')}</strong></div>`).join('')}</div></div>`;
+  }
+
+  function renderParticipantDetails(activity){
+    return `<div class="participant-list" style="margin-top:12px">${activity.assignedTechnicians.map(member=>{
+      const execution=executionFor(activity,member.technicianId)||{};
+      return `<div class="participant-card"><div class="participant-head"><div><h4>${escapeHtml(member.technicianName)} ${member.isResponsible?'<span class="responsible-chip">Responsável</span>':''}</h4><div class="participant-meta">${escapeHtml(member.baseCity||'Cidade não informada')} · ${escapeHtml(member.area)}</div></div>${participantBadge(execution.participantStatus||'assigned')}</div>
+        <div class="participant-stats"><div class="participant-stat"><span>KM estimado</span><strong>${number(member.estimatedKm,1)} km</strong></div><div class="participant-stat"><span>KM realizado</span><strong>${number(execution.totalActualKm,1)} km</strong></div><div class="participant-stat"><span>Despesa</span><strong>${money(execution.invoiceAmount)}</strong></div><div class="participant-stat"><span>Resultado</span><strong>${escapeHtml(execution.executionResult||'—')}</strong></div></div>
+        ${renderDailyLogs(execution)}
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  function renderTimeline(history){
+    if(!history.length)return '<div class="attachment-empty">Nenhum evento.</div>';
+    return `<div class="timeline">${[...history].sort((a,b)=>String(b.timestamp).localeCompare(String(a.timestamp))).map(event=>`<div class="timeline-item"><div class="timeline-marker">${I.activity}</div><div><strong>${escapeHtml(eventLabel(event.eventType))}</strong><p>${escapeHtml(event.comment||'')}</p><small>${escapeHtml(event.userName||'Sistema')} · ${formatDateTime(event.timestamp)}${event.technicianName?` · ${escapeHtml(event.technicianName)}`:''}</small></div></div>`).join('')}</div>`;
+  }
+
+  function eventLabel(type){
+    const labels={
+      activity_created:'ID cadastrado',
+      activity_edited:'ID editado',
+      returned_to_analyst:'Devolvida ao Analista',
+      activity_cancelled:'ID cancelado',
+      activity_assigned:'Programada e atribuída',
+      participant_accepted:'Atividade aceita',
+      participant_started:'Participação iniciada',
+      daily_log_added:'Registro diário',
+      participant_completed:'Participação concluída',
+      global_status_recalculated:'Status geral atualizado',
+      cable_reported:'Metragem de cabo registrada',
+      validated_compliant:'Validada como Conforme',
+      validated_non_compliant:'Validada como Não Conforme',
+      returned_for_adjustment:'Devolvida para ajuste'
+    };
+    return labels[type]||String(type||'Evento').replaceAll('_',' ');
+  }
+
+  function openEditModal(activityId){
+    const activity=activityById(activityId);if(!activity)return;
+    state.modal={wide:true,html:`<form id="edit-activity-form" data-id="${activity.id}">
+      <div class="modal-head"><div><h2>Editar ID</h2><p>${escapeHtml(activityDisplayId(activity))}</p></div><button type="button" class="icon-button" data-action="close-modal">${I.x}</button></div>
+      <div class="modal-body"><div class="form-grid">
+        ${field('Área','area','select',{items:Object.keys(AREA_CONFIG),value:activity.area,required:true})}
+        ${field('Atividade','activityType','select',{items:referenceData.activities,value:activity.activityType,required:true})}
+        ${field('Localidade de destino','destinationLocationName','text',{value:activity.destinationLocationName,required:true,list:'sp-locations'})}
+      </div>${locationDatalist()}<div class="form-grid form-grid-2">${field('Descrição','activityDescription','textarea',{value:activity.activityDescription,rows:4,required:true})}${field('Observações','initialNotes','textarea',{value:activity.initialNotes||'',rows:4})}</div></div>
+      <div class="modal-actions"><button type="button" class="btn-outline" data-action="close-modal">Cancelar</button><button type="submit" class="btn-primary">${I.check} Salvar</button></div>
+    </form>`};render();
+  }
+
+  function openProgramModal(activityId){
+    const activity=activityById(activityId);if(!activity)return;
+    state.modal={wide:true,html:`<form id="program-activity-form" data-id="${activity.id}">
+      <div class="modal-head"><div><h2>Programar e atribuir</h2><p>${escapeHtml(activityDisplayId(activity))} · uma única etapa</p></div><button type="button" class="icon-button" data-action="close-modal">${I.x}</button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          ${field('Área','area','select',{items:Object.keys(AREA_CONFIG),value:activity.area,required:true})}
+          ${field('Data inicial','scheduledDate','date',{value:activity.scheduledDate||isoDate(today),required:true})}
+          ${field('Localidade de destino','destinationLocationName','text',{value:activity.destinationLocationName,required:true,list:'sp-locations'})}
+          ${field('Atividade','activityType','select',{items:referenceData.activities,value:activity.activityType,required:true})}
+        </div>${locationDatalist()}
+        <div class="form-grid form-grid-2">${field('Descrição','activityDescription','textarea',{value:activity.activityDescription,rows:3,required:true})}${field('Orientações aos Técnicos','technicianInstructions','textarea',{value:activity.technicianInstructions,rows:3,required:true})}</div>
+        ${field('Anexos da programação','programmingFiles','file',{multiple:true})}
+        <div class="form-section-title">Equipe técnica</div><p class="form-subtitle">A lista considera a Área da atividade e ordena os Técnicos pela proximidade da localidade de destino.</p>
+        <div id="program-technician-picker">${renderTechnicianPicker(activity.area,activity.destinationLocationName,activity.scheduledDate,activity.assignedTechnicians,activity.responsibleTechnicianId)}</div>
+      </div>
+      <div class="modal-actions"><button type="button" class="btn-outline" data-action="close-modal">Cancelar</button><button type="submit" class="btn-primary">${I.users} Programar e atribuir</button></div>
+    </form>`};render();
+  }
+
+  function techniciansForArea(area){
+    return allTechnicians().filter(item=>item.active!==false&&item.area===area);
+  }
+
+  function renderTechnicianPicker(area,destination,date,selected=[],responsibleId=''){
+    const selectedIds=new Set(selected.map(item=>item.technicianId));
+    const ranked=techniciansForArea(area).map(tech=>({...tech,distance:estimatedKm(tech.city,destination),conflicts:activityConflicts(tech.id,date)})).sort((a,b)=>{
+      if(!a.distance&&b.distance)return 1;if(a.distance&&!b.distance)return-1;
+      return a.distance-b.distance||a.name.localeCompare(b.name);
+    });
+    if(!ranked.length)return `<div class="info-box">${I.info}<div>Nenhum Técnico ativo cadastrado para a Área ${escapeHtml(area)}. Cadastre os Técnicos com Área, Gerência e município de lotação para liberar a atribuição.</div></div>`;
+    return `<div class="technician-picker">${ranked.map((tech,index)=>`<label class="technician-option"><input type="checkbox" name="technicianIds" value="${tech.id}" ${selectedIds.has(tech.id)?'checked':''}><div class="technician-meta"><strong>${index+1}. ${escapeHtml(tech.name)}</strong><small>${escapeHtml(tech.city||'Lotação não informada')} · ${escapeHtml(tech.area)}${tech.conflicts?` · ${tech.conflicts} atividade(s) na data`:''}</small><label class="radio-line" data-stop><input type="radio" name="responsibleTechnicianId" value="${tech.id}" ${responsibleId===tech.id?'checked':''}> Responsável pela metragem de cabo</label></div><div class="technician-distance"><strong>${tech.distance?`${number(tech.distance,1)} km`:'—'}</strong><small>até o destino</small></div></label>`).join('')}</div>`;
+  }
+
+  function activityConflicts(technicianId,date){
+    if(!date)return 0;
+    return state.activities.filter(activity=>activity.scheduledDate===date&&activity.currentStatus!=='cancelled'&&technicianAssigned(activity,technicianId)).length;
+  }
+
+  function updateProgramPicker(){
+    const form=document.getElementById('program-activity-form');if(!form)return;
+    const area=form.elements.area.value,destination=form.elements.destinationLocationName.value,date=form.elements.scheduledDate.value;
+    const selected=Array.from(form.querySelectorAll('input[name="technicianIds"]:checked')).map(input=>({technicianId:input.value}));
+    const responsible=form.querySelector('input[name="responsibleTechnicianId"]:checked')?.value||'';
+    const container=document.getElementById('program-technician-picker');
+    if(container)container.innerHTML=renderTechnicianPicker(area,destination,date,selected,responsible);
+  }
+
+
+  function openBacklogDecisionModal(activityId,decision){
+    const activity=activityById(activityId);if(!activity)return;
+    const isCancel=decision==='cancel';
+    state.modal={wide:false,html:`<form id="backlog-decision-form" data-id="${activity.id}" data-decision="${decision}">
+      <div class="modal-head"><div><h2>${isCancel?'Cancelar ID':'Devolver ao Analista'}</h2><p>${escapeHtml(activityDisplayId(activity))}</p></div><button type="button" class="icon-button" data-action="close-modal">${I.x}</button></div>
+      <div class="modal-body">${field(isCancel?'Motivo do cancelamento':'Correção necessária','comment','textarea',{rows:4,required:true})}</div>
+      <div class="modal-actions"><button type="button" class="btn-outline" data-action="close-modal">Voltar</button><button type="submit" class="${isCancel?'btn-danger':'btn-warning'}">${isCancel?I.xCircle:I.left} Confirmar</button></div>
+    </form>`};render();
+  }
+
+  async function backlogDecision(form){
+    const activity=activityById(form.dataset.id);if(!activity)return;
+    const fd=new FormData(form),comment=String(fd.get('comment')||'').trim(),decision=form.dataset.decision,previous=activity.currentStatus;
+    if(!comment)return showToast('error','Comentário obrigatório','Informe o motivo.');
+    if(decision==='cancel'){
+      activity.currentStatus='cancelled';activity.currentStage='cancelled';
+      appendHistory(activity,'activity_cancelled',previous,'cancelled',comment);
+      addNotification('analyst','ID cancelado',`${activityDisplayId(activity)} foi cancelado pelo Supervisor.`,activity.id);
+    }else{
+      activity.currentStatus='returned_to_analyst';activity.currentStage='backlog';activity.analystCorrectionRequired=true;
+      appendHistory(activity,'returned_to_analyst',previous,'returned_to_analyst',comment);
+      addNotification('analyst','ID devolvido para correção',`${activityDisplayId(activity)} precisa de ajustes: ${comment}`,activity.id);
+    }
+    await persistActivity(activity);closeModal();showToast('success',decision==='cancel'?'ID cancelado':'ID devolvido',comment);
+  }
+
+  function openDailyLogModal(activityId){
+    const activity=activityById(activityId);if(!activity)return;
+    const responsible=isResponsible(activity);
+    state.modal={wide:true,html:`<form id="daily-log-form" data-id="${activity.id}">
+      <div class="modal-head"><div><h2>Registrar o dia</h2><p>${escapeHtml(activityDisplayId(activity))} · registro individual de ${escapeHtml(actor().name)}</p></div><button type="button" class="icon-button" data-action="close-modal">${I.x}</button></div>
+      <div class="modal-body">
+        <div class="form-grid">${field('Data do registro','date','date',{value:isoDate(today),required:true})}${field('KM realizado no dia','actualKm','number',{value:'',required:true,min:0,step:'0.1'})}${field('Concluiu sua participação hoje?','completedOnDate','select',{items:[{value:'no',label:'Não, continuarei em outro dia'},{value:'yes',label:'Sim, concluí minha participação'}],value:'no',required:true})}</div>
+        ${field('Observações do dia','notes','textarea',{rows:3,required:true})}
+        ${field('Evidências do dia','evidenceFiles','file',{multiple:true})}
+        <div id="daily-completion-fields" style="display:none">
+          <div class="form-section-title">Conclusão individual</div>
+          <div class="form-grid">${field('Resultado','executionResult','select',{items:['Concluída com sucesso','Concluída parcialmente','Concluída com pendência','Não executada'],value:'Concluída com sucesso'})}${field('Valor da nota fiscal','invoiceAmount','number',{value:0,min:0,step:'0.01'})}${field('Anexo da nota fiscal','invoiceFiles','file',{multiple:true})}</div>
+          ${field('Evidências de conclusão','completionFiles','file',{multiple:true})}
+          ${responsible?`<div class="form-section-title">Responsabilidade pela equipe</div><div class="form-grid">${field('Utilizou cabo?','usedCable','select',{items:[{value:'no',label:'Não'},{value:'yes',label:'Sim'}],value:activity.usedCable?'yes':'no',required:true})}${field('Metragem de cabo utilizada','cableMeters','number',{value:activity.cableMeters||0,min:0,step:'0.1'})}</div>`:''}
+        </div>
+      </div>
+      <div class="modal-actions"><button type="button" class="btn-outline" data-action="close-modal">Cancelar</button><button type="submit" class="btn-success">${I.checkCircle} Salvar registro</button></div>
+    </form>`};render();
+  }
+
+  function openValidationModal(activityId){
+    const activity=activityById(activityId);if(!activity)return;
+    state.modal={wide:true,html:`<form id="validation-form" data-id="${activity.id}">
+      <div class="modal-head"><div><h2>Validar atividade</h2><p>${escapeHtml(activityDisplayId(activity))} · todos os integrantes concluíram</p></div><button type="button" class="icon-button" data-action="close-modal">${I.x}</button></div>
+      <div class="modal-body">${renderParticipantDetails(activity)}
+        <div class="summary-grid"><div class="summary-card"><span>KM estimado</span><strong>${number(activity.totalEstimatedKm,1)} km</strong></div><div class="summary-card"><span>KM realizado</span><strong>${number(activity.totalActualKm,1)} km</strong></div><div class="summary-card"><span>Cabo</span><strong>${activity.usedCable?`${number(activity.cableMeters,1)} m`:'Não utilizado'}</strong></div><div class="summary-card"><span>Custo</span><strong>${money(activity.totalInvoiceAmount)}</strong></div></div>
+        ${field('Decisão','decision','select',{items:[{value:'compliant',label:'Conforme'},{value:'non_compliant',label:'Não Conforme'},{value:'return',label:'Devolver para ajuste'}],value:'compliant',required:true})}
+        <div id="non-compliance-reason" style="display:none">${field('Classificação da não conformidade','validationReason','select',{items:['Evidência insuficiente','Nota fiscal inválida','KM inconsistente','Metragem de cabo inconsistente','Atividade não executada conforme orientação','Informação incompleta','Outro'],value:'Evidência insuficiente'})}</div>
+        ${field('Motivo / comentário','comment','textarea',{rows:4,required:true})}
+        <div id="return-technicians" style="display:none"><div class="form-section-title">Técnicos que precisam corrigir</div><div class="checkbox-grid">${activity.assignedTechnicians.map(member=>`<label class="check-field"><input type="checkbox" name="returnTechnicianIds" value="${member.technicianId}"><span>${escapeHtml(member.technicianName)}</span></label>`).join('')}</div></div>
+      </div>
+      <div class="modal-actions"><button type="button" class="btn-outline" data-action="close-modal">Cancelar</button><button type="submit" class="btn-success">${I.checkCircle} Confirmar validação</button></div>
+    </form>`};render();
+  }
+
+  async function createActivity(form){
+    const fd=new FormData(form),area=fd.get('area'),cfg=areaDetails(area),a=actor();
+    const idType=fd.get('idType'),idCustomType=String(fd.get('idCustomType')||'').trim(),idNumber=String(fd.get('idNumber')||'').trim().toUpperCase();
+    if(idType==='Outros'&&!idCustomType)return showToast('error','Tipo obrigatório','Informe o tipo personalizado do ID.');
+    if(state.activities.some(item=>normalizeText(activityDisplayId(item))===normalizeText(`${idType==='Outros'?idCustomType:idType} ${idNumber}`)))return showToast('error','ID duplicado','Já existe uma atividade com este ID.');
+    const destination=String(fd.get('destinationLocationName')||'').trim();
+    if(!locationByName(destination))return showToast('error','Localidade inválida','Selecione um município disponível na lista.');
+    const createdAt=nowIso();
+    const activity={
+      id:uid('activity'),idType,idCustomType,idNumber,
+      area,management:cfg.management,managerId:cfg.managerId,managerName:cfg.managerName,
+      analystId:a.id,analystName:a.name,createdAt,backlogEnteredAt:createdAt,backlogExitedAt:'',
+      activityType:fd.get('activityType'),activityDescription:fd.get('activityDescription'),initialNotes:fd.get('initialNotes')||'',
+      destinationLocationId:locationByName(destination)?.id||'',destinationLocationName:destination,
+      supervisorId:'',supervisorName:'',scheduledDate:'',assignedAt:'',assignedBy:'',
+      programmingAttachments:[],technicianInstructions:'',
+      responsibleTechnicianId:'',responsibleTechnicianName:'',assignedTechnicians:[],technicianExecutions:{},
+      usedCable:false,cableMeters:0,cableReportedBy:'',cableReportedAt:'',
+      totalEstimatedKm:0,totalActualKm:0,totalInvoiceAmount:0,
+      validationStatus:'',validationResult:'',validationReason:'',validationComment:'',validatedBy:'',validatedAt:'',
+      currentStatus:'backlog',currentStage:'backlog',updatedAt:createdAt,version:1,history:[]
+    };
+    appendHistory(activity,'activity_created','',activity.currentStatus,'ID cadastrado pelo Analista.');
+    await persistActivity(activity);addNotification('supervisor','Novo ID no Backlog',`${activityDisplayId(activity)} foi cadastrado na Área ${area}.`,activity.id);
+    form.reset();state.activePage='backlog';showToast('success','ID cadastrado','A atividade foi incluída no Backlog.');render();
+  }
+
+  async function editActivity(form){
+    const activity=activityById(form.dataset.id);if(!activity)return;
+    const fd=new FormData(form),previous=activity.currentStatus,area=fd.get('area'),cfg=areaDetails(area);
+    activity.area=area;activity.management=cfg.management;activity.managerId=cfg.managerId;activity.managerName=cfg.managerName;
+    activity.activityType=fd.get('activityType');activity.activityDescription=fd.get('activityDescription');
+    activity.initialNotes=fd.get('initialNotes')||'';activity.destinationLocationName=fd.get('destinationLocationName');
+    activity.destinationLocationId=locationByName(activity.destinationLocationName)?.id||'';
+    appendHistory(activity,'activity_edited',previous,activity.currentStatus,'Dados do ID atualizados pelo Supervisor.');
+    await persistActivity(activity);closeModal();showToast('success','ID atualizado','As alterações foram salvas.');
+  }
+
+  async function programActivity(form){
+    const activity=activityById(form.dataset.id);if(!activity)return;
+    const fd=new FormData(form),area=fd.get('area'),cfg=areaDetails(area),destination=String(fd.get('destinationLocationName')||'').trim();
+    const technicianIds=fd.getAll('technicianIds'),responsibleId=fd.get('responsibleTechnicianId');
+    if(!technicianIds.length)return showToast('error','Equipe obrigatória','Selecione pelo menos um Técnico.');
+    if(!responsibleId||!technicianIds.includes(responsibleId))return showToast('error','Responsável obrigatório','Defina um dos Técnicos selecionados como responsável.');
+    if(!locationByName(destination))return showToast('error','Localidade inválida','Selecione um município disponível na lista.');
+    const a=actor(),previous=activity.currentStatus;
+    activity.area=area;activity.management=cfg.management;activity.managerId=cfg.managerId;activity.managerName=cfg.managerName;
+    activity.scheduledDate=fd.get('scheduledDate');activity.activityType=fd.get('activityType');activity.activityDescription=fd.get('activityDescription');
+    activity.destinationLocationName=destination;activity.destinationLocationId=locationByName(destination)?.id||'';
+    activity.technicianInstructions=fd.get('technicianInstructions');activity.supervisorId=a.id;activity.supervisorName=a.name;
+    activity.assignedAt=nowIso();activity.assignedBy=a.id;activity.backlogExitedAt=activity.assignedAt;
+    const files=await processFiles(form.elements.programmingFiles.files,activity.id,'programacao');
+    activity.programmingAttachments=[...(activity.programmingAttachments||[]),...files];
+    activity.assignedTechnicians=technicianIds.map(id=>{
+      const tech=allTechnicians().find(item=>item.id===id);
+      return {technicianId:id,technicianName:tech.name,area:tech.area,management:tech.management,baseCity:tech.city,estimatedKm:estimatedKm(tech.city,destination),isResponsible:id===responsibleId};
+    });
+    activity.responsibleTechnicianId=responsibleId;
+    activity.responsibleTechnicianName=activity.assignedTechnicians.find(item=>item.technicianId===responsibleId)?.technicianName||'';
+    activity.technicianExecutions=Object.fromEntries(activity.assignedTechnicians.map(member=>[member.technicianId,{
+      technicianId:member.technicianId,technicianName:member.technicianName,area:member.area,management:member.management,baseCity:member.baseCity,
+      participantStatus:'assigned',acceptedAt:'',startedAt:'',completedAt:'',estimatedKm:member.estimatedKm,totalActualKm:0,dailyExecutionLogs:[],
+      executionResult:'',technicianNotes:'',invoiceAmount:0,invoiceAttachments:[],completionEvidenceAttachments:[]
+    }]));
+    activity.currentStatus='assigned';activity.currentStage='assigned';
+    appendHistory(activity,'activity_assigned',previous,'assigned',`Equipe programada com ${technicianIds.length} Técnico(s). Responsável: ${activity.responsibleTechnicianName}.`);
+    await persistActivity(activity);
+    activity.assignedTechnicians.forEach(member=>addNotification('technician','Nova atividade atribuída',`${activityDisplayId(activity)} foi programada para ${formatDate(activity.scheduledDate)}.`,activity.id));
+    closeModal();showToast('success','Atividade programada e atribuída','Todos os Técnicos selecionados receberam a atividade.');
+  }
+
+  async function acceptActivity(activityId){
+    const activity=activityById(activityId),execution=executionFor(activity,actor().id);if(!execution)return;
+    const previous=execution.participantStatus;execution.participantStatus='accepted';execution.acceptedAt=nowIso();
+    appendHistory(activity,'participant_accepted',previous,'accepted','Atividade aceita pelo Técnico.',actor().id,actor().name);
+    recalculateActivity(activity);await persistActivity(activity);showToast('success','Atividade aceita','A atividade está disponível para início.');
+  }
+
+  async function startActivity(activityId){
+    const activity=activityById(activityId),execution=executionFor(activity,actor().id);if(!execution)return;
+    const previous=execution.participantStatus;execution.participantStatus='in_execution';execution.startedAt=execution.startedAt||nowIso();
+    appendHistory(activity,'participant_started',previous,'in_execution','Participação iniciada ou retomada.',actor().id,actor().name);
+    recalculateActivity(activity);await persistActivity(activity);state.activePage='currentActivity';showToast('success','Participação iniciada','Registre o KM e o andamento ao final do dia.');
+  }
+
+  async function saveDailyLog(form){
+    const activity=activityById(form.dataset.id),techId=actor().id,execution=executionFor(activity,techId);if(!execution)return;
+    const fd=new FormData(form),completed=fd.get('completedOnDate')==='yes',actualKm=Number(fd.get('actualKm')||0),notes=String(fd.get('notes')||'').trim();
+    if(actualKm<0||!notes)return showToast('error','Campos obrigatórios','Informe KM válido e observações.');
+    const evidence=await processFiles(form.elements.evidenceFiles.files,activity.id,`registros/${techId}`);
+    const log={date:fd.get('date'),actualKm,completedOnDate:completed,notes,evidenceAttachments:evidence,createdAt:nowIso()};
+    execution.dailyExecutionLogs.push(log);execution.totalActualKm=sum(execution.dailyExecutionLogs,item=>item.actualKm);
+    const previous=execution.participantStatus;
+    if(completed){
+      const result=fd.get('executionResult'),invoiceAmount=Number(fd.get('invoiceAmount')||0);
+      if(result!=='Concluída com sucesso'&&!notes)return showToast('error','Justificativa obrigatória','Informe as observações da conclusão.');
+      execution.executionResult=result;execution.technicianNotes=notes;execution.invoiceAmount=invoiceAmount;
+      execution.invoiceAttachments=[...execution.invoiceAttachments,...await processFiles(form.elements.invoiceFiles.files,activity.id,`notas/${techId}`)];
+      execution.completionEvidenceAttachments=[...execution.completionEvidenceAttachments,...await processFiles(form.elements.completionFiles.files,activity.id,`conclusao/${techId}`),...evidence];
+      execution.participantStatus='completed';execution.completedAt=nowIso();
+      if(isResponsible(activity,techId)){
+        const usedCable=fd.get('usedCable')==='yes',cableMeters=Number(fd.get('cableMeters')||0);
+        if(usedCable&&cableMeters<=0)return showToast('error','Metragem obrigatória','Informe quantos metros de cabo foram utilizados.');
+        activity.usedCable=usedCable;activity.cableMeters=usedCable?cableMeters:0;activity.cableReportedBy=techId;activity.cableReportedAt=nowIso();
+        appendHistory(activity,'cable_reported','',activity.currentStatus,usedCable?`${cableMeters} metros de cabo registrados.`:'Atividade sem utilização de cabo.',techId,actor().name);
+      }
+      appendHistory(activity,'participant_completed',previous,'completed','Participação individual concluída.',techId,actor().name);
+    }else{
+      execution.participantStatus='continued_next_day';
+      appendHistory(activity,'daily_log_added',previous,'continued_next_day',`Registro diário salvo com ${actualKm} km. A atividade continuará em outro dia.`,techId,actor().name);
+    }
+    const before=activity.currentStatus;recalculateActivity(activity);
+    await persistActivity(activity);
+    if(activity.currentStatus==='awaiting_supervisor_validation'&&before!==activity.currentStatus)addNotification('supervisor','Atividade disponível para validação',`Todos os integrantes concluíram ${activityDisplayId(activity)}.`,activity.id);
+    closeModal();showToast('success',completed?'Participação concluída':'Registro diário salvo',completed?'A atividade aguardará os demais integrantes antes da validação.':'A atividade continuará disponível em Atividade Atual.');
+  }
+
+  async function validateActivity(form){
+    const activity=activityById(form.dataset.id);if(!activity)return;
+    const fd=new FormData(form),decision=fd.get('decision'),comment=String(fd.get('comment')||'').trim(),validationReason=String(fd.get('validationReason')||''),previous=activity.currentStatus,a=actor();
+    if(!comment)return showToast('error','Comentário obrigatório','Informe o motivo ou comentário da validação.');
+    if(decision==='non_compliant'&&!validationReason)return showToast('error','Classificação obrigatória','Selecione a classificação da não conformidade.');
+    if(decision==='return'){
+      const ids=fd.getAll('returnTechnicianIds');
+      if(!ids.length)return showToast('error','Seleção obrigatória','Selecione pelo menos um Técnico para correção.');
+      ids.forEach(id=>{const execution=executionFor(activity,id);if(execution)execution.participantStatus='returned_for_adjustment';});
+      activity.currentStatus='returned_for_adjustment';activity.currentStage='returned_for_adjustment';
+      activity.validationStatus='returned';activity.validationComment=comment;
+      appendHistory(activity,'returned_for_adjustment',previous,activity.currentStatus,comment);
+      addNotification('technician','Atividade devolvida para ajuste',`${activityDisplayId(activity)} requer correção de informações.`,activity.id);
+    }else if(decision==='compliant'){
+      activity.validationStatus='compliant';activity.validationResult='Conforme';activity.validationComment=comment;activity.validatedBy=a.id;activity.validatedAt=nowIso();
+      activity.currentStatus='validated_compliant';activity.currentStage='validated_compliant';
+      appendHistory(activity,'validated_compliant',previous,activity.currentStatus,comment);
+      addNotification('technician','Atividade validada',`${activityDisplayId(activity)} foi validada como Conforme.`,activity.id);
+    }else{
+      activity.validationStatus='non_compliant';activity.validationResult='Não Conforme';activity.validationReason=validationReason;activity.validationComment=comment;activity.validatedBy=a.id;activity.validatedAt=nowIso();
+      activity.currentStatus='validated_non_compliant';activity.currentStage='validated_non_compliant';
+      appendHistory(activity,'validated_non_compliant',previous,activity.currentStatus,comment);
+      addNotification('technician','Atividade não conforme',`${activityDisplayId(activity)} foi validada como Não Conforme.`,activity.id);
+    }
+    await persistActivity(activity);closeModal();showToast('success','Validação registrada',STATUS_CONFIG[activity.currentStatus].label);
+  }
+
+  function exportCsv(){
+    const list=filteredActivities(accessibleActivities());
+    const headers=['ID','Área','Gerência','Gerente','Analista','Supervisor','Data de entrada','Data inicial','Atividade','Destino','Equipe','Responsável','Status','KM estimado','KM realizado','Utilizou cabo','Metros de cabo','Custo total','Validação'];
+    const rows=list.map(activity=>[
+      activityDisplayId(activity),activity.area,activity.management,activity.managerName,activity.analystName,activity.supervisorName,
+      String(activity.createdAt).slice(0,10),activity.scheduledDate,activity.activityType,activity.destinationLocationName,
+      activity.assignedTechnicians.map(item=>item.technicianName).join(' | '),activity.responsibleTechnicianName,
+      STATUS_CONFIG[activity.currentStatus]?.label||activity.currentStatus,activity.totalEstimatedKm,activity.totalActualKm,
+      activity.usedCable?'Sim':'Não',activity.cableMeters,activity.totalInvoiceAmount,activity.validationResult
+    ]);
+    const csv='\uFEFF'+[headers,...rows].map(row=>row.map(value=>`"${String(value??'').replaceAll('"','""')}"`).join(';')).join('\r\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=`gestao-de-atividades-${isoDate(today)}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+    showToast('success','CSV gerado',`${list.length} IDs exportados.`);
+  }
+
+  document.addEventListener('click',async event=>{
+    if(event.target.closest('[data-stop]'))event.stopPropagation();
+    const element=event.target.closest('[data-action]');if(!element)return;
+    const action=element.dataset.action,id=element.dataset.id;
+    if(action==='navigate'){state.activePage=element.dataset.page;state.notificationPanelOpen=false;state.profilePanelOpen=false;saveLocal();render();}
+    else if(action==='toggle-sidebar'){state.sidebarCollapsed=!state.sidebarCollapsed;saveLocal();render();}
+    else if(action==='toggle-notifications'){state.notificationPanelOpen=!state.notificationPanelOpen;state.profilePanelOpen=false;render();}
+    else if(action==='toggle-profile'){state.profilePanelOpen=!state.profilePanelOpen;state.notificationPanelOpen=false;render();}
+    else if(action==='switch-test-user'){
+      const selected=testUsers.find(user=>user.id===element.dataset.userId);
+      if(selected){
+        state.testUserId=selected.id;
+        state.profile=selected.profile;
+        state.activePage=menuItems[state.profile][0][0];
+        state.teamArea=selected.area||'Backbone';
+        state.profilePanelOpen=false;
+        state.filters={search:'',area:'',status:'',date:''};
+        saveLocal();
+        render();
+      }
+    }
+    else if(action==='select-team-area'){const area=element.dataset.area;if(teamAreasForActor().includes(area)){state.teamArea=area;saveLocal();render();}}
+    else if(action==='mark-notifications-read'){state.notifications.forEach(item=>{if(item.profile===state.profile||item.profile==='all')item.read=true;});saveLocal();render();}
+    else if(action==='open-notification'){state.notificationPanelOpen=false;if(id)openDrawer(id);else render();}
+    else if(action==='open-activity')openDrawer(id);
+    else if(action==='close-drawer')closeDrawer();
+    else if(action==='close-modal')closeModal();
+    else if(action==='close-toast'){state.toast=null;render();}
+    else if(action==='open-edit')openEditModal(id);
+    else if(action==='open-program')openProgramModal(id);
+    else if(action==='open-backlog-decision')openBacklogDecisionModal(id,element.dataset.decision);
+    else if(action==='accept-activity')await acceptActivity(id);
+    else if(action==='start-activity')await startActivity(id);
+    else if(action==='open-daily-log')openDailyLogModal(id);
+    else if(action==='open-validation')openValidationModal(id);
+    else if(action==='download-attachment')await downloadAttachment(id,element.dataset.technician,element.dataset.kind,element.dataset.index);
+    else if(action==='export-csv')exportCsv();
+    else if(action==='user-info')showToast('info','Perfil de teste','Em produção, identidade, perfil e escopo de Área serão carregados do usuário autenticado.');
+  });
+
+  let filterTimer=null;
+  document.addEventListener('input',event=>{
+    const filter=event.target.dataset.filter;
+    if(filter){state.filters[filter]=event.target.value;clearTimeout(filterTimer);filterTimer=setTimeout(()=>render(),250);return;}
+    if(event.target.closest('#program-activity-form')&&['area','destinationLocationName','scheduledDate'].includes(event.target.name))updateProgramPicker();
+  });
+
+  document.addEventListener('change',event=>{
+    if(event.target.closest('#create-activity-form')&&event.target.name==='area'){
+      const form=event.target.form,cfg=areaDetails(event.target.value);
+      form.elements.management.value=cfg.management;form.elements.managerName.value=cfg.managerName;
+    }
+    if(event.target.closest('#program-activity-form')&&['area','destinationLocationName','scheduledDate'].includes(event.target.name))updateProgramPicker();
+    if(event.target.closest('#daily-log-form')&&event.target.name==='completedOnDate'){
+      const fields=document.getElementById('daily-completion-fields');if(fields)fields.style.display=event.target.value==='yes'?'block':'none';
+    }
+    if(event.target.closest('#validation-form')&&event.target.name==='decision'){
+      const fields=document.getElementById('return-technicians');if(fields)fields.style.display=event.target.value==='return'?'block':'none';
+      const reason=document.getElementById('non-compliance-reason');if(reason)reason.style.display=event.target.value==='non_compliant'?'block':'none';
+    }
+    if(event.target.closest('#program-activity-form')&&event.target.name==='technicianIds'&&!event.target.checked){
+      const radio=event.target.closest('.technician-option')?.querySelector('input[name="responsibleTechnicianId"]');if(radio?.checked)radio.checked=false;
+    }
+    if(event.target.closest('#program-activity-form')&&event.target.name==='responsibleTechnicianId'){
+      const checkbox=event.target.closest('.technician-option')?.querySelector('input[name="technicianIds"]');if(checkbox)checkbox.checked=true;
+    }
+  });
+
+  document.addEventListener('submit',async event=>{
+    event.preventDefault();
+    const form=event.target;
+    if(form.id==='create-activity-form')await createActivity(form);
+    else if(form.id==='edit-activity-form')await editActivity(form);
+    else if(form.id==='program-activity-form')await programActivity(form);
+    else if(form.id==='backlog-decision-form')await backlogDecision(form);
+    else if(form.id==='daily-log-form')await saveDailyLog(form);
+    else if(form.id==='validation-form')await validateActivity(form);
+  });
+
+  document.addEventListener('mousedown',event=>{
+    if(!event.target.closest('.header-dropdown-wrap')&&(state.notificationPanelOpen||state.profilePanelOpen)){
+      state.notificationPanelOpen=false;state.profilePanelOpen=false;render();
+    }
+  });
+
+  loadLocal();
+  state.activities=state.activities.map(normalizeActivity);
+  render();
+  attachFirebase();
+
+  if(auth){
+    auth.onAuthStateChanged(async user=>{
+      state.currentUser=user||null;state.authUserProfile=null;
+      if(user&&database){
+        try{
+          const snapshot=await database.ref(`${DB_ROOT}/users/${user.uid}`).once('value');
+          const profile=snapshot.val()||null;state.authUserProfile=profile;
+          if(profileLabels[profile?.profile]){
+            state.profile=profile.profile;
+            state.activePage=menuItems[state.profile][0][0];
+          }
+        }catch(error){console.warn('Cadastro do usuário autenticado não pôde ser carregado.',error);}
+      }
+      render();
+    });
+  }
+
+  window.GestaoAtividades={
+    state,profileLabels,profileUsers,testUsers,menuItems,AREA_CONFIG,referenceData,STATUS_CONFIG,teamAreasForActor,technicianTeamStatus,allTechnicians,normalizedDirectoryUsers,
+    activityById,normalizeActivity,recalculateActivity,createActivity,programActivity,
+    acceptActivity,startActivity,saveDailyLog,validateActivity,exportCsv,
+    firebaseApp,database,auth,firebaseConfig,DB_ROOT
+  };
+  </script>
+</body>
+</html>
